@@ -16,4 +16,6 @@ clean:
 check: $(VMS)
 	simple_jvm/jvm tests/Foo1.class > output-jvm
 	simple_dvm/dvm tests/Foo1.dex > output-dvm
+#	simple_jvm/jvm -cp tests dhry > output-dhry-jvm
+#	simple_dvm/dvm tests/classes.dex dhry > output-dhry-dvm
 	@diff -u output-jvm output-dvm || echo "ERROR: different results"
