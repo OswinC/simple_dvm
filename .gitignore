@@ -22,3 +22,7 @@ output-dvm
 
 # cscope output
 cscope.*
+
+*.swp
+*.class
+*.dex
