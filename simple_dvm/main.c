@@ -26,5 +26,7 @@ int main(int argc, char *argv[])
     if (is_verbose() > 3) printDexFile(&dex);
     simple_dvm_startup(&dex, &vm, "main");
 
+    freeDex(&dex);
+
     return 0;
 }

@@ -89,3 +89,103 @@ int parseDexFile(char *file, DexFileFormat *dex)
     free(buf);
     return 0;
 }
+
+void free_map_list(DexFileFormat *dex)
+{
+	if (dex->type_list.type_item)
+		free(dex->type_list.type_item);
+
+	if (dex->map_list.map_item)
+		free(dex->map_list.map_item);
+}
+
+void free_string_ids(DexFileFormat *dex)
+{
+	if (dex->string_data_item)
+		free(dex->string_data_item);
+
+	if (dex->string_ids)
+		free(dex->string_ids);
+}
+
+void free_type_ids(DexFileFormat *dex)
+{
+	if (dex->type_id_item)
+		free(dex->type_id_item);
+}
+
+void free_proto_ids(DexFileFormat *dex)
+{
+	int i;
+
+	if (dex->proto_id_item)
+		free(dex->proto_id_item);
+
+	if (dex->proto_type_list) {
+		for (i = 0; i < dex->header.protoIdsSize; i++) {
+			if (dex->proto_type_list[i].type_item)
+				free(dex->proto_type_list[i].type_item);
+		}
+
+		free(dex->proto_type_list);
+	}
+}
+
+void free_field_ids(DexFileFormat *dex)
+{
+	if (dex->field_id_item)
+		free(dex->field_id_item);
+}
+
+void free_method_ids(DexFileFormat *dex)
+{
+	if (dex->method_id_item)
+		free(dex->method_id_item);
+}
+
+void free_encoded_method(encoded_method *method)
+{
+	if (method->code_item.insns)
+		free(method->code_item.insns);
+}
+
+void free_class_data_item(DexFileFormat *dex, int idx)
+{
+	int i;
+	class_data_item *item = &dex->class_data_item[idx];
+
+	if (item->direct_methods) {
+		for (i = 0; i < item->direct_methods_size; i++) {
+			free_encoded_method(&item->direct_methods[i]);
+		}
+
+		free(item->direct_methods);
+	}
+}
+
+void free_class_defs(DexFileFormat *dex)
+{
+	int i;
+
+	if (dex->class_def_item)
+		free(dex->class_def_item);
+
+	if (dex->class_data_item) {
+		for (i = 0; i < dex->header.classDefsSize; i++) {
+			free_class_data_item(dex, i);
+		}
+
+		free(dex->class_data_item);
+	}
+}
+
+void freeDex(DexFileFormat *dex)
+{
+	free_map_list(dex);
+	free_string_ids(dex);
+	free_type_ids(dex);
+	free_proto_ids(dex);
+	free_field_ids(dex);
+	free_method_ids(dex);
+	free_class_defs(dex);
+}
