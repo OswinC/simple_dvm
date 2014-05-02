@@ -91,6 +91,11 @@ typedef struct _code_item {
     */
 } code_item;
 
+typedef struct _encoded_field {
+    uint field_idx_diff;
+    uint access_flags;
+} encoded_field;
+
 typedef struct _encoded_method {
     uint method_idx_diff;
     uint access_flags;
@@ -115,6 +120,8 @@ typedef struct _class_data_item {
     uint direct_methods_size;
     uint virtual_methods_size;
 
+    encoded_field *static_fields;
+    encoded_field *instance_fields;
     encoded_method *direct_methods;
     encoded_method *virtual_methods;
 } class_data_item;
