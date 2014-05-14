@@ -31,6 +31,8 @@ static void parse_encoded_method(DexFileFormat *dex,
 
     if (is_verbose() > 3) {
         printf("registers_size = %d\n", method->code_item.registers_size);
+        printf("ins_size = %d\n", method->code_item.ins_size);
+        printf("outs_size = %d\n", method->code_item.outs_size);
         printf("insns_size = %d\n", method->code_item.insns_size);
     }
     method->code_item.insns = malloc(sizeof(ushort) * method->code_item.insns_size);
