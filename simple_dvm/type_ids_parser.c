@@ -150,3 +150,11 @@ field_id_item *get_field_item(DexFileFormat *dex, int field_id)
         return &dex->field_id_item[field_id];
     return 0;
 }
+
+//char *get_field_item_name(DexFileFormat *dex, int field_id)
+//{
+//    field_id_item *item = get_field_item(dex, field_id);
+//    if (item)
+//        return get_string_data(dex, item->name_idx);
+//    return NULL;
+//}

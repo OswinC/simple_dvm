@@ -173,6 +173,141 @@ static int op_const_string(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, in
     return 0;
 }
 
+class_def_item *find_class_def(DexFileFormat *dex, int type_id)
+{
+	int i;
+	class_def_item *found = NULL;
+
+	for (i = 0; i < dex->header.classDefsSize; i++)
+	{
+		class_def_item *item = &dex->class_def_item[i];
+
+		if (item->class_idx == type_id)
+		{
+			found = item;
+			break;
+		}
+	}
+
+	return found;
+}
+
+class_data_item *find_class_data(DexFileFormat *dex, int type_id)
+{
+	int i;
+	class_data_item *found = NULL;
+
+	for (i = 0; i < dex->header.classDefsSize; i++)
+	{
+		class_data_item *class_data = &dex->class_data_item[i];
+		class_def_item *item = &dex->class_def_item[i];
+
+		if (item->class_idx == type_id)
+		{
+			found = class_data;
+			break;
+		}
+	}
+
+	return found;
+}
+
+//int get_type_size(char *type_str)
+//{
+//	if (!strncmp(type_str, "Z", 1))
+//		return 1;
+//	if (!strncmp(type_str, "B", 1))
+//		return 1;
+//	if (!strncmp(type_str, "S", 1))
+//		return 2;
+//	if (!strncmp(type_str, "C", 1))
+//		return 1;
+//	if (!strncmp(type_str, "I", 1))
+//		return 4;
+//	if (!strncmp(type_str, "J", 1))
+//		return 4;
+//	if (!strncmp(type_str, "F", 1))
+//		return 4;
+//	if (!strncmp(type_str, "D", 1))
+//		return 8;
+//	if (!strncmp(type_str, "L", 1))
+//		return 4;
+//	if (!strncmp(type_str, "[", 1))
+//		return 4;
+//}
+
+class_obj *create_class_obj(DexFileFormat *dex, class_def_item *class_def, class_data_item *class_data)
+{
+	int i;
+	int aggregated_idx = 0;
+	class_obj *obj;
+
+	obj = (class_obj*)malloc(sizeof(class_obj) + class_data->static_fields_size);
+	if (!obj)
+	{
+		printf("alloc class obj fail\n");
+		return NULL;
+	}
+
+	memset(obj, 0, sizeof(class_obj) + class_data->static_fields_size);
+	obj->fields = (obj_field *)((char *)obj + sizeof(class_obj));
+	strcpy(obj->name, get_type_item_name(dex, class_def->class_idx));
+
+	for (i = 0; i < class_data->static_fields_size; i++)
+	{
+		encoded_field *field = &class_data->static_fields[i];
+		obj_field *obj_field = &obj->fields[i];
+		field_id_item *field_item;
+		char *type_str, *name_str;
+
+		aggregated_idx += field->field_idx_diff;
+		field_item = get_field_item(dex, aggregated_idx);
+		name_str = get_string_data(dex, field_item->name_idx);
+		type_str = get_type_item_name(dex, field_item->type_idx);
+
+		strcpy(obj_field->name, name_str);
+		strcpy(obj_field->type, type_str);
+	}
+
+	return obj;
+}
+
+instance_obj *create_instance_obj(DexFileFormat *dex, class_obj *cls, class_data_item *class_data)
+{
+	int i;
+	int aggregated_idx = 0;
+	instance_obj *obj;
+
+	obj = (instance_obj*)malloc(sizeof(instance_obj) + class_data->instance_fields_size);
+	if (!obj)
+	{
+		printf("alloc instance obj fail\n");
+		return NULL;
+	}
+
+	memset(obj, 0, sizeof(instance_obj) + class_data->instance_fields_size);
+	obj->fields = (obj_field *)((char *)obj + sizeof(instance_obj));
+	obj->cls = cls;
+
+	for (i = 0; i < class_data->instance_fields_size; i++)
+	{
+		encoded_field *field = &class_data->instance_fields[i];
+		obj_field *obj_field = &obj->fields[i];
+		field_id_item *field_item;
+		char *type_str, *name_str;
+
+		aggregated_idx += field->field_idx_diff;
+		field_item = get_field_item(dex, aggregated_idx);
+		name_str = get_string_data(dex, field_item->name_idx);
+		type_str = get_type_item_name(dex, field_item->type_idx);
+
+		strcpy(obj_field->name, name_str);
+		strcpy(obj_field->type, type_str);
+	}
+
+	return obj;
+}
+
 /* 0x22 new-instance vx,type
  * Instantiates an object type and puts
  * the reference of the newly created instance into vx
@@ -185,6 +320,10 @@ static int op_new_instance(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, in
     int reg_idx_vx = 0;
     int type_id = 0;
     type_id_item *type_item = 0;
+    class_data_item *class_data;
+    class_def_item *class_def;
+    class_obj *cls_obj;
+    instance_obj *ins_obj;
 
     reg_idx_vx = ptr[*pc + 1];
     type_id = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
@@ -198,10 +337,29 @@ static int op_new_instance(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, in
         }
         printf("\n");
     }
-    store_to_reg(vm, reg_idx_vx, (unsigned char*)&type_id);
+//    store_to_reg(vm, reg_idx_vx, (unsigned char*)&type_id);
     /* TODO */
+    class_data = find_class_data(dex, type_id);
+    class_def = find_class_def(dex, type_id);
+    cls_obj = create_class_obj(dex, class_def, class_data);
+    if (!cls_obj)
+    {
+        printf("cls_obj create fail: %s\n", get_string_data(dex, type_item->descriptor_idx));
+        return -1;
+    }
+
+    ins_obj = create_instance_obj(dex, cls_obj, class_data);
+    if (!ins_obj)
+    {
+        printf("ins_obj create fail: %s\n", get_string_data(dex, type_item->descriptor_idx));
+        return -1;
+    }
+
+    store_to_reg(vm, reg_idx_vx, (unsigned char *)ins_obj);
+
     *pc = *pc + 4;
-    return 0;
+//    return 0;
+    return -1;
 }
 
 /* 35c format
@@ -717,7 +875,8 @@ void runMethod(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m)
         opCode = ptr[vm->pc];
         func = findOpCodeFunc(opCode);
         if (func != 0) {
-            func(dex, vm, ptr, &vm->pc);
+            if (func(dex, vm, ptr, &vm->pc))
+	        break;
         } else {
             printRegs(vm);
             printf("Unknow OpCode =%02x \n", opCode);

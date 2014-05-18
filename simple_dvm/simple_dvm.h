@@ -192,6 +192,7 @@ type_list *get_proto_type_list(DexFileFormat *dex, int proto_id);
 /* field_ids parser */
 void parse_field_ids(DexFileFormat *dex, unsigned char *buf, int offset);
 field_id_item *get_field_item(DexFileFormat *dex, int field_id);
+char *get_field_item_name(DexFileFormat *dex, int field_id);
 
 /* method ids parser */
 void parse_method_ids(DexFileFormat *dex, unsigned char *buf, int offset);
@@ -222,6 +223,29 @@ typedef struct _simple_dalvik_vm {
     u1 result[8];
     uint pc;
 } simple_dalvik_vm;
+
+typedef struct _obj_field {
+	char name[255];
+	char type[255];
+	int size;
+	union {
+		int idata;
+		char cdata;
+		short sdata;
+		float fdata;
+		double ddata;
+	} data;
+} obj_field;
+
+typedef struct _class_obj {
+	char name[255];
+	obj_field *fields;
+} class_obj;
+
+typedef struct _instance_obj {
+	class_obj *cls;
+	obj_field *fields;
+} instance_obj;
 
 /* convert to int ok */
 void load_reg_to(simple_dalvik_vm *vm, int id, unsigned char *ptr);
