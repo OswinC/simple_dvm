@@ -12,7 +12,7 @@ CFLAGS += -g -std=c99
 LDFLAGS =
 
 # Optimizations
-CFLAGS += -Os
+CFLAGS += -O0
 
 # project starts here
 CFLAGS += -I.
