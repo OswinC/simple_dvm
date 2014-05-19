@@ -222,6 +222,7 @@ typedef struct _simple_dalvik_vm {
     invoke_parameters p;
     u1 result[8];
     uint pc;
+    u1 *fp;
 } simple_dalvik_vm;
 
 typedef struct _obj_field {

@@ -862,13 +862,24 @@ static opCodeFunc findOpCodeFunc(unsigned char op)
     return 0;
 }
 
+int new_invoke_frame(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m)
+{
+	int ins_size = m->code_item.ins_size;
+	int reg_size = m->code_item.registers_size;
+}
+
 void runMethod(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m)
 {
     u1 *ptr = (u1 *) m->code_item.insns;
     unsigned char opCode = 0;
     opCodeFunc func = 0;
 
-    vm->pc = 0;
+    if (new_invoke_frame(dex, vm ,m))
+    {
+        printf("new frame fail\n");
+	return;
+    }
+
     while (1) {
         if (vm->pc >= m->code_item.insns_size * sizeof(ushort))
             break;
@@ -883,6 +894,12 @@ void runMethod(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m)
             break;
         }
     }
+}
+
+void runMainMethod(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m)
+{
+    vm->pc = 0;
+    runMethod(dex, vm, m);
 }
 
 encoded_method *find_method(DexFileFormat *dex, int class_idx, int method_name_idx)
