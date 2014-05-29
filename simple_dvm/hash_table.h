@@ -1,6 +1,8 @@
 #ifndef _HASHTABLE_H_
 #define _HASHTABLE_H_
 
+#include "list_head.h"
+
 #define HASH_SIZE 128
 
 struct hash_table
