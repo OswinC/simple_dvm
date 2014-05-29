@@ -42,69 +42,69 @@
 #ifndef _LIST_HEAD_H_
 #define _LIST_HEAD_H_
 
-struct TListHead
+struct list_head
 {
-	struct TListHead *ptPrev;
-	struct TListHead *ptNext;
+	struct list_head *prev;
+	struct list_head *next;
 };
 
 #define container_of(ptr, st, en) \
 	({char *p = (char *)&(((st *)0)->en); (st *)((char *)ptr - (unsigned long)p);})
 
 #define foreach(e, list) \
-	for (e = (list)->ptNext; e != (list); e = e->ptNext)
+	for (e = (list)->next; e != (list); e = e->next)
 
 #define foreach_safe(e, tmp, list) \
-	for (e = (list)->ptNext, tmp = e->ptNext; e != (list); e = tmp, tmp = tmp->ptNext)
+	for (e = (list)->next, tmp = e->next; e != (list); e = tmp, tmp = tmp->next)
 
 #define LIST_INIT(x) \
-	struct TListHead x = {&x, &x}
+	struct list_head x = {&x, &x}
 
-static inline void InitList(struct TListHead *ptEntry)
+static inline void list_init(struct list_head *entry)
 {
-	ptEntry->ptNext = ptEntry;
-	ptEntry->ptPrev = ptEntry;
+	entry->next = entry;
+	entry->prev = entry;
 }
 
-static inline struct TListHead *ListNext(struct TListHead *ptEntry)
+static inline struct list_head *list_next(struct list_head *entry)
 {
-	return ptEntry->ptNext;
+	return entry->next;
 }
 
-static inline struct TListHead *ListPrev(struct TListHead *ptEntry)
+static inline struct list_head *list_prev(struct list_head *entry)
 {
-	return ptEntry->ptPrev;
+	return entry->prev;
 }
 
-static inline int ListIsEmpty(struct TListHead *ptEntry)
+static inline int list_empty(struct list_head *entry)
 {
-	return (ptEntry->ptNext != ptEntry) ? 0 : 1;
+	return (entry->next != entry) ? 0 : 1;
 }
 
-static inline void ListAdd(struct TListHead *ptEntry, struct TListHead *ptList)
+static inline void list_add(struct list_head *entry, struct list_head *list)
 {
-	ptEntry->ptNext = ptList->ptNext;
-	ptEntry->ptPrev = ptList;
-	ptList->ptNext->ptPrev = ptEntry;
-	ptList->ptNext = ptEntry;
+	entry->next = list->next;
+	entry->prev = list;
+	list->next->prev = entry;
+	list->next = entry;
 }
 
-static inline void ListRemove(struct TListHead *ptEntry)
+static inline void list_remote(struct list_head *entry)
 {
-	ptEntry->ptPrev->ptNext = ptEntry->ptNext;
-	ptEntry->ptNext->ptPrev = ptEntry->ptPrev;
-	ptEntry->ptNext = NULL;
-	ptEntry->ptPrev = NULL;
+	entry->prev->next = entry->next;
+	entry->next->prev = entry->prev;
+	entry->next = NULL;
+	entry->prev = NULL;
 }
 
-static inline void ListAddTail(struct TListHead *ptEntry, struct TListHead *ptList)
+static inline void list_add_tail(struct list_head *entry, struct list_head *list)
 {
-	ListAdd(ptEntry, ptList->ptPrev);
+	list_add(entry, list->prev);
 }
 
-static inline void ListAddHead(struct TListHead *ptEntry, struct TListHead *ptList)
+static inline void list_add_head(struct list_head *entry, struct list_head *list)
 {
-	ListAdd(ptEntry, ptList);
+	list_add(entry, list);
 }
 
 #endif // _LIST_HEAD_H_
