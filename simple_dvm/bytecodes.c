@@ -242,14 +242,14 @@ class_obj *create_class_obj(DexFileFormat *dex, class_def_item *class_def, class
 	int aggregated_idx = 0;
 	class_obj *obj;
 
-	obj = (class_obj*)malloc(sizeof(class_obj) + class_data->static_fields_size);
+	obj = (class_obj*)malloc(sizeof(class_obj) + class_data->static_fields_size * sizeof(obj_field));
 	if (!obj)
 	{
 		printf("alloc class obj fail\n");
 		return NULL;
 	}
 
-	memset(obj, 0, sizeof(class_obj) + class_data->static_fields_size);
+	memset(obj, 0, sizeof(class_obj) + class_data->static_fields_size * sizeof(obj_field));
 	obj->fields = (obj_field *)((char *)obj + sizeof(class_obj));
 	strcpy(obj->name, get_type_item_name(dex, class_def->class_idx));
 
@@ -278,14 +278,14 @@ instance_obj *create_instance_obj(DexFileFormat *dex, class_obj *cls, class_data
 	int aggregated_idx = 0;
 	instance_obj *obj;
 
-	obj = (instance_obj*)malloc(sizeof(instance_obj) + class_data->instance_fields_size);
+	obj = (instance_obj*)malloc(sizeof(instance_obj) + class_data->instance_fields_size * sizeof(obj_field));
 	if (!obj)
 	{
 		printf("alloc instance obj fail\n");
 		return NULL;
 	}
 
-	memset(obj, 0, sizeof(instance_obj) + class_data->instance_fields_size);
+	memset(obj, 0, sizeof(instance_obj) + class_data->instance_fields_size * sizeof(obj_field));
 	obj->fields = (obj_field *)((char *)obj + sizeof(instance_obj));
 	obj->cls = cls;
 
