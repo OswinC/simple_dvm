@@ -212,6 +212,28 @@ class_data_item *find_class_data(DexFileFormat *dex, int type_id)
 	return found;
 }
 
+class_obj *find_class_obj(simple_dalvik_vm *vm, char *name)
+{
+	class_obj *obj = NULL, *found = NULL;
+	struct list_head *p, *list;
+
+	list = hash_get(&vm->root_set, hash(name));
+	if (!list)
+		return NULL;
+
+	foreach(p, list)
+	{
+		obj = (class_obj *) container_of(p, class_obj, class_list);
+		if (strncmp(name, obj->name, strlen(name)) == 0)
+		{
+			found = obj;
+			break;
+		}
+	}
+
+	return found;
+}
+
 //int get_type_size(char *type_str)
 //{
 //	if (!strncmp(type_str, "Z", 1))
@@ -236,11 +258,17 @@ class_data_item *find_class_data(DexFileFormat *dex, int type_id)
 //		return 4;
 //}
 
-class_obj *create_class_obj(DexFileFormat *dex, class_def_item *class_def, class_data_item *class_data)
+class_obj *create_class_obj(simple_dalvik_vm *vm, DexFileFormat *dex, class_def_item *class_def, class_data_item *class_data)
 {
 	int i;
 	int aggregated_idx = 0;
 	class_obj *obj;
+	char *name;
+
+	name = get_type_item_name(dex, class_def->class_idx);
+	obj = find_class_obj(vm, name);
+	if (obj)
+		return obj;
 
 	obj = (class_obj*)malloc(sizeof(class_obj) + class_data->static_fields_size * sizeof(obj_field));
 	if (!obj)
@@ -251,7 +279,7 @@ class_obj *create_class_obj(DexFileFormat *dex, class_def_item *class_def, class
 
 	memset(obj, 0, sizeof(class_obj) + class_data->static_fields_size * sizeof(obj_field));
 	obj->fields = (obj_field *)((char *)obj + sizeof(class_obj));
-	strcpy(obj->name, get_type_item_name(dex, class_def->class_idx));
+	strcpy(obj->name, name);
 
 	for (i = 0; i < class_data->static_fields_size; i++)
 	{
@@ -268,6 +296,8 @@ class_obj *create_class_obj(DexFileFormat *dex, class_def_item *class_def, class
 		strcpy(obj_field->name, name_str);
 		strcpy(obj_field->type, type_str);
 	}
+	// TODO: wrap it to another class_*-series function?
+	hash_add(&vm->root_set, &obj->class_list, hash(obj->name));
 
 	return obj;
 }
@@ -341,7 +371,7 @@ static int op_new_instance(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, in
     /* TODO */
     class_data = find_class_data(dex, type_id);
     class_def = find_class_def(dex, type_id);
-    cls_obj = create_class_obj(dex, class_def, class_data);
+	cls_obj = create_class_obj(vm, dex, class_def, class_data);
     if (!cls_obj)
     {
         printf("cls_obj create fail: %s\n", get_string_data(dex, type_item->descriptor_idx));
@@ -851,7 +881,7 @@ static byteCode byteCodes[] = {
     { "mul-double/2addr"  , 0xcd, 2,  op_mul_double_2addr},
     { "div-int/lit8"      , 0xdb, 4,  op_div_int_lit8 }
 };
-static byteCode_size = sizeof(byteCodes) / sizeof(byteCode);
+static int byteCode_size = sizeof(byteCodes) / sizeof(byteCode);
 
 static opCodeFunc findOpCodeFunc(unsigned char op)
 {
@@ -980,5 +1010,6 @@ void simple_dvm_startup(DexFileFormat *dex, simple_dalvik_vm *vm, char *entry)
                m->method_idx_diff, m->code_item.insns_size);
 
     memset(vm , 0, sizeof(simple_dalvik_vm));
+	hash_init(&vm->root_set);
     runMethod(dex, vm, m);
 }

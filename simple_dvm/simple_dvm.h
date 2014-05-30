@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "list_head.h"
+#include "hash_table.h"
 
 typedef short u2;
 typedef unsigned int u4;
@@ -223,6 +225,7 @@ typedef struct _simple_dalvik_vm {
     u1 result[8];
     uint pc;
     u1 *fp;
+	struct hash_table root_set;
 } simple_dalvik_vm;
 
 typedef struct _obj_field {
@@ -240,6 +243,7 @@ typedef struct _obj_field {
 
 typedef struct _class_obj {
 	char name[255];
+	struct list_head class_list;
 	obj_field *fields;
 } class_obj;
 

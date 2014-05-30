@@ -17,6 +17,7 @@ CFLAGS += -O0
 # project starts here
 CFLAGS += -I.
 OBJS = \
+	hash_table.o \
     bytecodes.o \
     java_lib.o \
     map_list_parser.o \
