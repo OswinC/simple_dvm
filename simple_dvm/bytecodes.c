@@ -361,8 +361,7 @@ static int op_new_instance(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, in
     store_to_reg(vm, reg_idx_vx, (unsigned char *)ins_obj);
 
     *pc = *pc + 4;
-//    return 0;
-    return -1;
+    return 0;
 }
 
 /* 35c format
@@ -419,13 +418,13 @@ static int invoke_method(DexFileFormat *dex, simple_dalvik_vm *vm,
 		printf("%s: no method found: %s.%s\n", __FUNCTION__,
 				get_string_data(dex, item->descriptor_idx),
 				get_string_data(dex, m->name_idx));
-		return 1;
+		return 0;
 	}
 
 	if (new_invoke_frame(dex, vm, method))
 	{
 		printf("new frame fail\n");
-		return 1;
+		return 0;
 	}
 
 	ins_size = method->code_item.ins_size;
@@ -445,7 +444,10 @@ static int invoke_method(DexFileFormat *dex, simple_dalvik_vm *vm,
 		store_to_reg(vm, i, (u1 *)&value);
 	}
 
-	return 0;
+	vm->pc = 0;
+	runMethod(dex, vm, method);
+
+	return 1;
 }
 
 static int op_utils_invoke(char *name, DexFileFormat *dex, simple_dalvik_vm *vm,
@@ -517,12 +519,12 @@ static int op_utils_invoke(char *name, DexFileFormat *dex, simple_dalvik_vm *vm,
                                               proto_type_list->type_item[0].type_idx),
                            get_type_item_name(dex,
                                               proto_item->return_type_idx));
-                if (!invoke_java_lang_library(dex, vm,
+                if (invoke_java_lang_library(dex, vm,
                                          get_string_data(dex, type_class->descriptor_idx),
                                          get_string_data(dex, m->name_idx),
                                          get_type_item_name(dex, proto_type_list->type_item[0].type_idx)))
 			goto out;
-		if (!invoke_method(dex, vm, m, p))
+		if (invoke_method(dex, vm, m, p))
 			goto out;
             } else {
                 if (is_verbose())
@@ -531,11 +533,11 @@ static int op_utils_invoke(char *name, DexFileFormat *dex, simple_dalvik_vm *vm,
                            get_string_data(dex, m->name_idx),
                            get_type_item_name(dex,
                                               proto_item->return_type_idx));
-                if (!invoke_java_lang_library(dex, vm,
+                if (invoke_java_lang_library(dex, vm,
                                          get_string_data(dex, type_class->descriptor_idx),
                                          get_string_data(dex, m->name_idx), 0))
 			goto out;
-		if (!invoke_method(dex, vm, m, p))
+		if (invoke_method(dex, vm, m, p))
 			goto out;
             }
 
@@ -959,6 +961,8 @@ int new_invoke_frame(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m
 
 	/* step 3: Update current fp */
 	vm->fp = vm->sp;
+
+	return 0;
 }
 
 void runMethod(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m)
