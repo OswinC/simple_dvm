@@ -226,6 +226,7 @@ typedef struct _simple_dalvik_vm {
     uint pc;
     u1 *fp;
     u1 *sp;
+	u1 returned;
 	struct hash_table root_set;
 } simple_dalvik_vm;
 

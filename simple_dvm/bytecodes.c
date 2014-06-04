@@ -10,6 +10,8 @@
 
 encoded_method *find_method(DexFileFormat *dex, int class_idx, int method_name_idx);
 int new_invoke_frame(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m);
+void stack_push(simple_dalvik_vm *vm, u4 data);
+u4 stack_pop(simple_dalvik_vm *vm);
 
 static int find_const_string(DexFileFormat *dex, char *entry)
 {
@@ -84,9 +86,31 @@ static int op_move_result_object(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *p
  */
 static int op_return_void(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
 {
+	int reg_size;
+	int idx;
+
     if (is_verbose())
         printf("return-void\n");
-    *pc = *pc + 2;
+
+	/* step 1: Update current sp */
+	vm->sp = vm->fp;
+
+	/* step 2: Pop caller registers */
+	reg_size = stack_pop(vm);
+	for (idx = reg_size - 1; idx >= 0; idx--)
+	{
+		u4 value;
+
+		value = stack_pop(vm);
+		store_to_reg(vm, idx, (u1 *)&value);
+	}
+
+	/* step 3: Pop fp & pc */
+	vm->fp = (u1 *) stack_pop(vm);
+	vm->pc = stack_pop(vm);
+
+	vm->returned = 1;
+
     return 0;
 }
 
@@ -988,6 +1012,7 @@ int new_invoke_frame(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m
 		load_reg_to(vm, idx, (u1 *)&value);
 		stack_push(vm, value);
 	}
+	stack_push(vm, reg_size);
 
 	/* step 3: Update current fp */
 	vm->fp = vm->sp;
@@ -1002,8 +1027,10 @@ void runMethod(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m)
     opCodeFunc func = 0;
 
     while (1) {
-        if (vm->pc >= m->code_item.insns_size * sizeof(ushort))
+        if (vm->returned) {
+			vm->returned = 0;
             break;
+		}
         opCode = ptr[vm->pc];
         func = findOpCodeFunc(opCode);
         if (func != 0) {
