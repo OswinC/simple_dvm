@@ -8,6 +8,9 @@
 #include "simple_dvm.h"
 #include "java_lib.h"
 
+encoded_method *find_method(DexFileFormat *dex, int class_idx, int method_name_idx);
+int new_invoke_frame(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m);
+
 static int find_const_string(DexFileFormat *dex, char *entry)
 {
     int i = 0;
@@ -400,6 +403,51 @@ static int op_utils_invoke_35c_parse(DexFileFormat *dex, u1 *ptr, int *pc,
     return 0;
 }
 
+static int invoke_method(DexFileFormat *dex, simple_dalvik_vm *vm,
+		method_id_item *m, invoke_parameters *p)
+{
+	encoded_method *method;
+	int ins_size;
+	int reg_size;
+	int target_idx, i;
+	u4 value;
+
+	method = find_method(dex, (int)m->class_idx, (int)m->name_idx);
+	if (!method)
+	{
+		type_id_item *item = get_type_item(dex, m->class_idx);
+		printf("%s: no method found: %s.%s\n", __FUNCTION__,
+				get_string_data(dex, item->descriptor_idx),
+				get_string_data(dex, m->name_idx));
+		return 1;
+	}
+
+	if (new_invoke_frame(dex, vm, method))
+	{
+		printf("new frame fail\n");
+		return 1;
+	}
+
+	ins_size = method->code_item.ins_size;
+	reg_size = method->code_item.registers_size;
+	target_idx = reg_size - 1;
+
+	for (i = ins_size - 1; i >= 0; i--)
+	{
+		load_reg_to(vm, p->reg_idx[i], (u1 *)&value);
+		store_to_reg(vm, target_idx, (u1 *)&value);
+		target_idx--;
+	}
+
+	value = 0;
+	for (i = target_idx; i >= 0; i--)
+	{
+		store_to_reg(vm, i, (u1 *)&value);
+	}
+
+	return 0;
+}
+
 static int op_utils_invoke(char *name, DexFileFormat *dex, simple_dalvik_vm *vm,
                            invoke_parameters *p)
 {
@@ -469,10 +517,13 @@ static int op_utils_invoke(char *name, DexFileFormat *dex, simple_dalvik_vm *vm,
                                               proto_type_list->type_item[0].type_idx),
                            get_type_item_name(dex,
                                               proto_item->return_type_idx));
-                invoke_java_lang_library(dex, vm,
+                if (!invoke_java_lang_library(dex, vm,
                                          get_string_data(dex, type_class->descriptor_idx),
                                          get_string_data(dex, m->name_idx),
-                                         get_type_item_name(dex, proto_type_list->type_item[0].type_idx));
+                                         get_type_item_name(dex, proto_type_list->type_item[0].type_idx)))
+			goto out;
+		if (!invoke_method(dex, vm, m, p))
+			goto out;
             } else {
                 if (is_verbose())
                     printf(" %s,%s,()%s \n",
@@ -480,9 +531,12 @@ static int op_utils_invoke(char *name, DexFileFormat *dex, simple_dalvik_vm *vm,
                            get_string_data(dex, m->name_idx),
                            get_type_item_name(dex,
                                               proto_item->return_type_idx));
-                invoke_java_lang_library(dex, vm,
+                if (!invoke_java_lang_library(dex, vm,
                                          get_string_data(dex, type_class->descriptor_idx),
-                                         get_string_data(dex, m->name_idx), 0);
+                                         get_string_data(dex, m->name_idx), 0))
+			goto out;
+		if (!invoke_method(dex, vm, m, p))
+			goto out;
             }
 
         } else {
@@ -490,6 +544,8 @@ static int op_utils_invoke(char *name, DexFileFormat *dex, simple_dalvik_vm *vm,
                 printf("\n");
         }
     }
+
+out:
     return 0;
 }
 
@@ -862,10 +918,47 @@ static opCodeFunc findOpCodeFunc(unsigned char op)
     return 0;
 }
 
+void stack_push(simple_dalvik_vm *vm, u4 data)
+{
+	u1 *sp = vm->sp - 4;
+	u1 *ptr = (u1 *)&data;
+
+	memcpy(sp, ptr, 4);
+	vm->sp = sp;
+}
+
+u4 stack_pop(simple_dalvik_vm *vm)
+{
+	u1 *sp = vm->sp;
+	u4 value;
+
+	memcpy(&value, sp, 4);
+	vm->sp += 4;
+
+	return value;
+}
+
 int new_invoke_frame(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m)
 {
 	int ins_size = m->code_item.ins_size;
 	int reg_size = m->code_item.registers_size;
+	int idx;
+
+	/* step 1: Push pc & fp */
+	stack_push(vm, vm->pc);
+	stack_push(vm, (u4)vm->fp);
+
+	/* step 2: Push caller registers */
+	for (idx = 0; idx < reg_size; idx++)
+	{
+		u4 value;
+
+		load_reg_to(vm, idx, (u1 *)&value);
+		stack_push(vm, value);
+	}
+
+	/* step 3: Update current fp */
+	vm->fp = vm->sp;
 }
 
 void runMethod(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m)
@@ -873,12 +966,6 @@ void runMethod(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m)
     u1 *ptr = (u1 *) m->code_item.insns;
     unsigned char opCode = 0;
     opCodeFunc func = 0;
-
-    if (new_invoke_frame(dex, vm ,m))
-    {
-        printf("new frame fail\n");
-	return;
-    }
 
     while (1) {
         if (vm->pc >= m->code_item.insns_size * sizeof(ushort))
@@ -980,5 +1067,7 @@ void simple_dvm_startup(DexFileFormat *dex, simple_dalvik_vm *vm, char *entry)
                m->method_idx_diff, m->code_item.insns_size);
 
     memset(vm , 0, sizeof(simple_dalvik_vm));
+    vm->sp = vm->heap + sizeof(vm->heap);
+    vm->fp = vm->sp;
     runMethod(dex, vm, m);
 }

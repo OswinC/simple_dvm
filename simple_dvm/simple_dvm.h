@@ -223,6 +223,7 @@ typedef struct _simple_dalvik_vm {
     u1 result[8];
     uint pc;
     u1 *fp;
+    u1 *sp;
 } simple_dalvik_vm;
 
 typedef struct _obj_field {
