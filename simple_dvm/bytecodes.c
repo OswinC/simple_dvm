@@ -424,7 +424,7 @@ static int op_new_instance(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, in
         return -1;
     }
 
-    store_to_reg(vm, reg_idx_vx, (unsigned char *)ins_obj);
+    store_to_reg(vm, reg_idx_vx, (unsigned char *)&ins_obj);
 
     *pc = *pc + 4;
     return 0;
