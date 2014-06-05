@@ -254,6 +254,7 @@ class_obj *create_class_obj(DexFileFormat *dex, class_def_item *class_def, class
 
 	memset(obj, 0, sizeof(class_obj) + class_data->static_fields_size * sizeof(obj_field));
 	obj->fields = (obj_field *)((char *)obj + sizeof(class_obj));
+	obj->field_size = class_data->static_fields_size;
 	strcpy(obj->name, get_type_item_name(dex, class_def->class_idx));
 
 	for (i = 0; i < class_data->static_fields_size; i++)
@@ -291,6 +292,7 @@ instance_obj *create_instance_obj(DexFileFormat *dex, class_obj *cls, class_data
 	memset(obj, 0, sizeof(instance_obj) + class_data->instance_fields_size * sizeof(obj_field));
 	obj->fields = (obj_field *)((char *)obj + sizeof(instance_obj));
 	obj->cls = cls;
+	obj->field_size = class_data->instance_fields_size;
 
 	for (i = 0; i < class_data->instance_fields_size; i++)
 	{
@@ -598,6 +600,55 @@ static int op_invoke_static(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, i
     return 0;
 }
 
+/* 0x59 iput va, vb, field_id
+ * Stores the value in va to the field of the object referenced in vb identified by field_id.
+ * 5910 0000 - iput v0, v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Stores v0 to field@0000 (entry #0H in the field id table) of v1.
+ */
+static int op_iput(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int field_id = 0;
+    int reg_idx_va = 0;
+    int reg_idx_vb = 0;
+    instance_obj *obj;
+    unsigned int value;
+    char *name_str;
+    int i;
+    obj_field *found = NULL;
+
+    reg_idx_va = ptr[*pc + 1] & 0xf;
+    reg_idx_vb = (ptr[*pc + 1] >> 4) & 0xf;
+    field_id = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+
+    if (is_verbose()) {
+        printf("iput v%d, v%d, field 0x%04x\n", reg_idx_va, reg_idx_vb, field_id);
+    }
+    load_reg_to(vm, reg_idx_va, (unsigned char *)&value);
+    load_reg_to(vm, reg_idx_vb, (unsigned char *)&obj);
+
+    name_str = get_field_item_name(dex, field_id);
+    for (i = 0; i < obj->field_size; i++)
+    {
+        if (!strncmp(name_str, obj->fields[i].name, strlen(name_str)))
+	{
+	    found = &obj->fields[i];
+	}
+    }
+
+    if (!found)
+    {
+       printf("%s: no field found: %s\n", __FUNCTION__, name_str);
+       goto out;
+    }
+
+    store_to_field(value, found);
+
+out:
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
 /* 0x62 sget-object vx,field_id
  * Reads the object reference field identified by the field_id into vx.
  * 6201 0C00 - sget-object v1, Test3.os1:Ljava/lang/Object; // field@000c
@@ -895,6 +946,7 @@ static byteCode byteCodes[] = {
     { "const-wide/high16" , 0x19, 4,  op_const_wide_high16 },
     { "const-string"      , 0x1a, 4,  op_const_string },
     { "new-instance"      , 0x22, 4,  op_new_instance },
+    { "iput"              , 0x59, 2,  op_iput },
     { "sget-object"       , 0x62, 4,  op_sget_object },
     { "invoke-virtual"    , 0x6e, 6,  op_invoke_virtual },
     { "invoke-direct"     , 0x70, 6,  op_invoke_direct },
@@ -909,7 +961,7 @@ static byteCode byteCodes[] = {
     { "mul-double/2addr"  , 0xcd, 2,  op_mul_double_2addr},
     { "div-int/lit8"      , 0xdb, 4,  op_div_int_lit8 }
 };
-static byteCode_size = sizeof(byteCodes) / sizeof(byteCode);
+static int byteCode_size = sizeof(byteCodes) / sizeof(byteCode);
 
 static opCodeFunc findOpCodeFunc(unsigned char op)
 {

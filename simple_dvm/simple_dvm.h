@@ -231,9 +231,9 @@ typedef struct _obj_field {
 	char type[255];
 	int size;
 	union {
-		int idata;
-		char cdata;
-		short sdata;
+		unsigned int idata;
+		unsigned char cdata;
+		unsigned short sdata;
 		float fdata;
 		double ddata;
 	} data;
@@ -242,17 +242,20 @@ typedef struct _obj_field {
 typedef struct _class_obj {
 	char name[255];
 	obj_field *fields;
+	int field_size;
 } class_obj;
 
 typedef struct _instance_obj {
 	class_obj *cls;
 	obj_field *fields;
+	int field_size;
 } instance_obj;
 
 /* convert to int ok */
 void load_reg_to(simple_dalvik_vm *vm, int id, unsigned char *ptr);
 void load_reg_to_double(simple_dalvik_vm *vm, int id, unsigned char *ptr);
 void load_result_to_double(simple_dalvik_vm *vm, unsigned char *ptr);
+void store_to_field(unsigned int v, obj_field *field);
 
 void store_to_reg(simple_dalvik_vm *vm, int id, unsigned char *ptr);
 void store_double_to_reg(simple_dalvik_vm *vm, int id, unsigned char *ptr);

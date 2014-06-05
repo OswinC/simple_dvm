@@ -110,3 +110,35 @@ void move_bottom_half_result_to_reg(simple_dalvik_vm *vm, int id)
     r->data[2] = vm->result[6];
     r->data[3] = vm->result[7];
 }
+
+void store_to_field(unsigned int v, obj_field *field)
+{
+	char *type_str = field->type;
+
+	if (!strncmp(type_str, "Z", 1))
+		field->data.cdata = (unsigned char)v;
+	if (!strncmp(type_str, "B", 1))
+		field->data.cdata = (unsigned char)v;
+	if (!strncmp(type_str, "S", 1))
+		field->data.sdata = (unsigned short)v;
+	if (!strncmp(type_str, "C", 1))
+		field->data.cdata = (unsigned char)v;
+	if (!strncmp(type_str, "I", 1))
+		field->data.idata = v;
+	if (!strncmp(type_str, "J", 1))
+		field->data.idata = v;
+	if (!strncmp(type_str, "F", 1))
+	{
+		unsigned char *dptr = (unsigned char *)&field->data.fdata;
+		unsigned char *sptr = (unsigned char *)&v;
+		memcpy(dptr, sptr, 4);
+	}
+	if (!strncmp(type_str, "D", 1))
+	{
+		/* TODO */
+	}
+	if (!strncmp(type_str, "L", 1))
+		field->data.idata = v;
+	if (!strncmp(type_str, "[", 1))
+		field->data.idata = v;
+}
