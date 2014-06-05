@@ -80,17 +80,15 @@ static int op_move_result_object(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *p
     return 0;
 }
 
-/* 0x0e , return-void
- * Return without a return value
- * 0E00 - return-void
+/*
+ * Pop registers from the stack in vm to restore calling frame,
+ * then set the flag returned to be 1 to notify the module running 
+ * instructions (e.g., the function runMethod().)
  */
-static int op_return_void(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+static int op_utils_return(simple_dalvik_vm *vm)
 {
 	int reg_size;
 	int idx;
-
-    if (is_verbose())
-        printf("return-void\n");
 
 	/* step 1: Update current sp */
 	vm->sp = vm->fp;
@@ -111,7 +109,19 @@ static int op_return_void(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int
 
 	vm->returned = 1;
 
-    return 0;
+	return 0;
+}
+
+/* 0x0e , return-void
+ * Return without a return value
+ * 0E00 - return-void
+ */
+static int op_return_void(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    if (is_verbose())
+        printf("return-void\n");
+
+    return op_utils_return(vm);
 }
 
 /* 0x12, const/4 vx,lit4
@@ -1027,7 +1037,7 @@ void runMethod(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m)
     opCodeFunc func = 0;
 
     while (1) {
-        if (vm->returned) {
+        if (vm->returned || vm->pc >= m->code_item.insns_size * sizeof(ushort)) {
 			vm->returned = 0;
             break;
 		}
