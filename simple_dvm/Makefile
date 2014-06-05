@@ -8,8 +8,8 @@ SUFFIX ?=
 EXECUTABLE = $(PROJECT)$(SUFFIX)
 
 # Basic configurations
-CFLAGS += -g -std=c99
-LDFLAGS =
+CFLAGS += -g -std=c99 -m32
+LDFLAGS = -m32
 
 # Optimizations
 CFLAGS += -O0
