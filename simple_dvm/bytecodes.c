@@ -676,12 +676,10 @@ static int op_invoke_static(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, i
     return 0;
 }
 
-/* 0x59 iput va, vb, field_id
- * Stores the value in va to the field of the object referenced in vb identified by field_id.
- * 5910 0000 - iput v0, v1, Test3.os1:Ljava/lang/Object; // field@000c
- * Stores v0 to field@0000 (entry #0H in the field id table) of v1.
+/*
+ * 22c family iput operation for 4-byte long data
  */
-static int op_iput(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+static int op_utils_iput(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
 {
     int field_id = 0;
     int reg_idx_va = 0;
@@ -695,12 +693,135 @@ static int op_iput(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
     field_id = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
 
     if (is_verbose()) {
-        printf("iput v%d, v%d, field 0x%04x\n", reg_idx_va, reg_idx_vb, field_id);
+        printf("op_utils_iput v%d, v%d, field 0x%04x\n", reg_idx_va, reg_idx_vb, field_id);
     }
 
     name_str = get_field_item_name(dex, field_id); 
 
     store_to_field(vm, reg_idx_va, reg_idx_vb, name_str); 
+
+    return 0;
+}
+
+/*
+ * 22c family iput operation for 8-byte long data
+ */
+static int op_utils_iput_wide(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int field_id = 0;
+    int reg_idx_va = 0;
+    int reg_idx_vb = 0;
+    char *name_str;
+    int i;
+    obj_field *found = NULL;
+
+    reg_idx_va = ptr[*pc + 1] & 0xf;
+    reg_idx_vb = (ptr[*pc + 1] >> 4) & 0xf;
+    field_id = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+
+    if (is_verbose()) {
+        printf("op_utils_iput_wide v%d, v%d, field 0x%04x\n", reg_idx_va, reg_idx_vb, field_id);
+    }
+
+    name_str = get_field_item_name(dex, field_id); 
+
+    store_to_field_wide(vm, reg_idx_va, reg_idx_vb, name_str); 
+
+    return 0;
+}
+
+/* 0x59 iput va, vb, field_id
+ * Stores the value in va to the field of the object referenced in vb identified by field_id.
+ * 5910 0000 - iput v0, v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Stores v0 to field@0000 (entry #0H in the field id table) of v1.
+ */
+static int op_iput(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_iput(dex, vm, ptr, pc);
+out:
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0x5a iput-wide va, vb, field_id
+ * Stores the value in va and va+1 to the field of the object referenced in vb identified by field_id.
+ * 5a20 0000 - iput-wide v0, v2, Test3.os1:Ljava/lang/Object; // field@000c
+ * Stores v0 to field@0000 (entry #0H in the field id table) of v1.
+ */
+static int op_iput_wide(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_iput_wide(dex, vm, ptr, pc);
+out:
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0x5b iput-object va, vb, field_id
+ * Stores the value in va to the field of the object referenced in vb identified by field_id.
+ * 5b10 0000 - iput-object v0, v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Stores v0 to field@0000 (entry #0H in the field id table) of v1.
+ */
+static int op_iput_object(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_iput(dex, vm, ptr, pc);
+out:
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0x5c iput-boolean va, vb, field_id
+ * Stores the value in va to the field of the object referenced in vb identified by field_id.
+ * 5c10 0000 - iput-boolean v0, v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Stores v0 to field@0000 (entry #0H in the field id table) of v1.
+ */
+static int op_iput_boolean(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_iput(dex, vm, ptr, pc);
+out:
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0x5d iput-byte va, vb, field_id
+ * Stores the value in va to the field of the object referenced in vb identified by field_id.
+ * 5d10 0000 - iput-byte v0, v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Stores v0 to field@0000 (entry #0H in the field id table) of v1.
+ */
+static int op_iput_byte(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_iput(dex, vm, ptr, pc);
+out:
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0x5e iput-char va, vb, field_id
+ * Stores the value in va to the field of the object referenced in vb identified by field_id.
+ * 5e10 0000 - iput-char v0, v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Stores v0 to field@0000 (entry #0H in the field id table) of v1.
+ */
+static int op_iput_char(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_iput(dex, vm, ptr, pc);
+out:
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0x5f iput-short va, vb, field_id
+ * Stores the value in va to the field of the object referenced in vb identified by field_id.
+ * 5f10 0000 - iput-short v0, v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Stores v0 to field@0000 (entry #0H in the field id table) of v1.
+ */
+static int op_iput_short(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_iput(dex, vm, ptr, pc);
 out:
     /* TODO */
     *pc = *pc + 4;
@@ -1005,6 +1126,12 @@ static byteCode byteCodes[] = {
     { "const-string"      , 0x1a, 4,  op_const_string },
     { "new-instance"      , 0x22, 4,  op_new_instance },
     { "iput"              , 0x59, 2,  op_iput },
+    { "iput-wide"         , 0x5a, 2,  op_iput_wide },
+    { "iput-object"       , 0x5b, 2,  op_iput_object },
+    { "iput-boolean"      , 0x5c, 2,  op_iput_boolean },
+    { "iput-byte"         , 0x5d, 2,  op_iput_byte },
+    { "iput-char"         , 0x5e, 2,  op_iput_char },
+    { "iput-short"        , 0x5f, 2,  op_iput_short },
     { "sget-object"       , 0x62, 4,  op_sget_object },
     { "invoke-virtual"    , 0x6e, 6,  op_invoke_virtual },
     { "invoke-direct"     , 0x70, 6,  op_invoke_direct },
