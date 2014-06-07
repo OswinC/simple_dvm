@@ -674,8 +674,6 @@ static int op_iput(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
     int field_id = 0;
     int reg_idx_va = 0;
     int reg_idx_vb = 0;
-    instance_obj *obj;
-    unsigned int value;
     char *name_str;
     int i;
     obj_field *found = NULL;
@@ -687,26 +685,10 @@ static int op_iput(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
     if (is_verbose()) {
         printf("iput v%d, v%d, field 0x%04x\n", reg_idx_va, reg_idx_vb, field_id);
     }
-    load_reg_to(vm, reg_idx_va, (unsigned char *)&value);
-    load_reg_to(vm, reg_idx_vb, (unsigned char *)&obj);
 
-    name_str = get_field_item_name(dex, field_id);
-    for (i = 0; i < obj->field_size; i++)
-    {
-        if (!strncmp(name_str, obj->fields[i].name, strlen(name_str)))
-	{
-	    found = &obj->fields[i];
-	}
-    }
+    name_str = get_field_item_name(dex, field_id); 
 
-    if (!found)
-    {
-       printf("%s: no field found: %s\n", __FUNCTION__, name_str);
-       goto out;
-    }
-
-    store_to_field(value, found);
-
+    store_to_field(vm, reg_idx_va, reg_idx_vb, name_str); 
 out:
     /* TODO */
     *pc = *pc + 4;
