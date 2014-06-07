@@ -39,6 +39,18 @@ static void printRegs(simple_dalvik_vm *vm)
     }
 }
 
+static void printInsFields(instance_obj *obj)
+{
+    int i = 0;
+    if (is_verbose()) {
+		printf("Instance %x of %s, with fields:\n", obj, obj->cls->name);
+		for (i = 0; i < obj->field_size; i++)
+		{
+			printf(".%s:%s: 0x%x\n", obj->fields[i].name, obj->fields[i].type, obj->fields[i].data);
+		}
+    }
+}
+
 /* 0x0b, move-result-wide
  *
  * Move the long/double result value of the previous method invocation
