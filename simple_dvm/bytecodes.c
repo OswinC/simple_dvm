@@ -467,7 +467,7 @@ static int op_utils_invoke_35c_parse(DexFileFormat *dex, u1 *ptr, int *pc,
         p->reg_idx[4] = tmp & 0x0F;
 
         p->method_id = ptr[*pc + 2];
-        p->method_id |= (ptr[*pc + 3] << 4);
+        p->method_id |= (ptr[*pc + 3] << 8);
 
         tmp = ptr[*pc + 4];
         p->reg_idx[1] = tmp >> 4;
