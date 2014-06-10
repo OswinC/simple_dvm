@@ -51,6 +51,24 @@ static void printInsFields(instance_obj *obj)
     }
 }
 
+/* 0x0a, move-result vx
+ *
+ * Move the result value of previous method invocation into vx.
+ *
+ * 0A01 - move-result v1
+ * Move the result value of previous method invocation into v1.
+ */
+static int op_move_result(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    reg_idx_vx = ptr[*pc + 1];
+    if (is_verbose())
+        printf("move-result v%d\n", reg_idx_vx);
+    move_bottom_half_result_to_reg(vm, reg_idx_vx);
+    *pc = *pc + 2;
+    return 0;
+}
+
 /* 0x0b, move-result-wide
  *
  * Move the long/double result value of the previous method invocation
@@ -131,8 +149,55 @@ static int op_utils_return(simple_dalvik_vm *vm)
 static int op_return_void(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
 {
     if (is_verbose())
-        printf("return-void\n");
+        printf("return-void\n"); 
+    return op_utils_return(vm);
+}
 
+/* 0x0f , return
+ * Return from a single-width (32-bit) non-object value-returning method
+ * 0F01 - return v1
+ * Move the value in v1 into result register, then return
+ */
+static int op_return(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    reg_idx_vx = ptr[*pc + 1];
+    if (is_verbose())
+		printf("return v%d\n", reg_idx_vx);
+	move_reg_to_bottom_half_result(vm, reg_idx_vx); 
+    return op_utils_return(vm);
+}
+
+/* 0x10 , return-wide
+ * Return from a double-width (64-bit) value-returning method 
+ * 1001 - return-wide v1
+ * Move the value in the register pair of v1 and v2 into result register, then return
+ */
+static int op_return_wide(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int reg_idx_vy = 0;
+    reg_idx_vx = ptr[*pc + 1];
+    reg_idx_vy = reg_idx_vx + 1;
+    if (is_verbose())
+		printf("return-wide v%d\n", reg_idx_vx);
+	move_reg_to_bottom_half_result(vm, reg_idx_vx); 
+	move_reg_to_top_half_result(vm, reg_idx_vy);
+    return op_utils_return(vm);
+}
+
+/* 0x11 , return-object
+ * Return from a object-returning method
+ * 1101 - return-object v1
+ * Move the object reference in v1 into result register, then return
+ */
+static int op_return_object(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    reg_idx_vx = ptr[*pc + 1];
+    if (is_verbose())
+		printf("return-object v%d\n", reg_idx_vx);
+	move_reg_to_bottom_half_result(vm, reg_idx_vx); 
     return op_utils_return(vm);
 }
 
@@ -176,6 +241,25 @@ static int op_const_16(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *p
     if (is_verbose())
         printf("const/16 v%d, #int%d\n", reg_idx_vx, value);
     *pc = *pc + 4;
+    return 0;
+}
+
+/* 0x14, const vx,lit32
+ * Puts the 32 bit constant into vx
+ * 1400 0A00 0000 - const v0, #int 10
+ * Puts the literal constant of 10 into v0.
+ */
+static int op_const(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int value = 0;
+    reg_idx_vx = ptr[*pc + 1];
+    value = (ptr[*pc + 5] << 24 | ptr[*pc + 4] << 16 | ptr[*pc + 3] << 8 | ptr[*pc + 2]);
+
+    store_to_reg(vm, reg_idx_vx, (unsigned char *) &value);
+    if (is_verbose())
+        printf("const v%d, #int%d\n", reg_idx_vx, value);
+    *pc = *pc + 6;
     return 0;
 }
 
@@ -1269,11 +1353,16 @@ static int op_div_int_lit8(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, in
 }
 
 static byteCode byteCodes[] = {
+    { "move-result"		  , 0x0A, 2,  op_move_result },
     { "move-result-wide"  , 0x0B, 2,  op_move_result_wide },
     { "move-result-object", 0x0C, 2,  op_move_result_object },
     { "return-void"       , 0x0e, 2,  op_return_void },
+    { "return"			  , 0x0f, 2,  op_return },
+    { "return-wide"		  , 0x10, 2,  op_return_wide },
+    { "return-object"	  , 0x11, 2,  op_return_object },
     { "const/4"           , 0x12, 2,  op_const_4 },
     { "const/16"          , 0x13, 4,  op_const_16 },
+    { "const"			  , 0x14, 6,  op_const },
     { "const-wide/high16" , 0x19, 4,  op_const_wide_high16 },
     { "const-string"      , 0x1a, 4,  op_const_string },
     { "new-instance"      , 0x22, 4,  op_new_instance },
