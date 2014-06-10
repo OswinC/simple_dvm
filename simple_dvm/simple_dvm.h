@@ -271,6 +271,7 @@ void store_double_to_result(simple_dalvik_vm *vm, unsigned char *ptr);
 void store_to_field(simple_dalvik_vm *vm, int val_id, int obj_id, char *field_name);
 void store_to_field_wide(simple_dalvik_vm *vm, int val_id, int obj_id, char *field_name);
 
+void printInsFields(instance_obj *obj);
 void move_top_half_result_to_reg(simple_dalvik_vm *vm, int id);
 void move_bottom_half_result_to_reg(simple_dalvik_vm *vm, int id);
 void move_reg_to_top_half_result(simple_dalvik_vm *vm, int id);
