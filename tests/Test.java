@@ -16,6 +16,9 @@ class Test
 	public static void main(String args[])
 	{
 		Test a = new Test(6);
+		int b;
+
+		b = a.doTest(4);
 		System.out.println("hello");
 	}
 }
