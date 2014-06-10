@@ -9,6 +9,7 @@
 #include "java_lib.h"
 
 encoded_method *find_method(DexFileFormat *dex, int class_idx, int method_name_idx);
+encoded_method *find_vmethod(DexFileFormat *dex, int class_idx, int method_name_idx);
 int new_invoke_frame(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m);
 void stack_push(simple_dalvik_vm *vm, u4 data);
 u4 stack_pop(simple_dalvik_vm *vm);
@@ -483,7 +484,7 @@ static int op_utils_invoke_35c_parse(DexFileFormat *dex, u1 *ptr, int *pc,
     return 0;
 }
 
-static int invoke_method(DexFileFormat *dex, simple_dalvik_vm *vm,
+static int invoke_method(char *name, DexFileFormat *dex, simple_dalvik_vm *vm,
 		method_id_item *m, invoke_parameters *p)
 {
 	encoded_method *method;
@@ -492,7 +493,18 @@ static int invoke_method(DexFileFormat *dex, simple_dalvik_vm *vm,
 	int target_idx, i;
 	u4 value;
 
-	method = find_method(dex, (int)m->class_idx, (int)m->name_idx);
+	if (!strcmp(name, "invoke-direct"))
+		method = find_method(dex, (int)m->class_idx, (int)m->name_idx);
+	else if (!strcmp(name, "invoke-virtual"))
+		method = find_vmethod(dex, (int)m->class_idx, (int)m->name_idx);
+//	else if (strcmp(name, "invoke-static"))
+		// FIXME
+	else
+	{
+		printf("%s: Invalid op code: %s\n", name);
+		return 0;
+	}
+
 	if (!method)
 	{
 		type_id_item *item = get_type_item(dex, m->class_idx);
@@ -605,7 +617,7 @@ static int op_utils_invoke(char *name, DexFileFormat *dex, simple_dalvik_vm *vm,
                                          get_string_data(dex, m->name_idx),
                                          get_type_item_name(dex, proto_type_list->type_item[0].type_idx)))
 			goto out;
-		if (invoke_method(dex, vm, m, p))
+		if (invoke_method(name, dex, vm, m, p))
 			goto out;
             } else {
                 if (is_verbose())
@@ -618,7 +630,7 @@ static int op_utils_invoke(char *name, DexFileFormat *dex, simple_dalvik_vm *vm,
                                          get_string_data(dex, type_class->descriptor_idx),
                                          get_string_data(dex, m->name_idx), 0))
 			goto out;
-		if (invoke_method(dex, vm, m, p))
+		if (invoke_method(name, dex, vm, m, p))
 			goto out;
             }
 
@@ -1393,6 +1405,40 @@ void runMainMethod(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m)
 {
     vm->pc = 0;
     runMethod(dex, vm, m);
+}
+
+encoded_method *find_vmethod(DexFileFormat *dex, int class_idx, int method_name_idx)
+{
+	int i, j;
+	encoded_method *found = NULL;
+
+	for (i = 0; i < dex->header.classDefsSize; i++)
+	{
+		if (dex->class_def_item[i].class_idx == class_idx)
+		{
+			class_data_item *item = &dex->class_data_item[i];
+			int methods_size = item->virtual_methods_size;
+			int aggregated_idx = 0;
+
+			for (j = 0; j < methods_size; j++)
+			{
+				encoded_method *tmp = &item->virtual_methods[j];
+				aggregated_idx += tmp->method_idx_diff;
+				method_id_item *item = &dex->method_id_item[aggregated_idx];
+
+				if (item->name_idx == method_name_idx)
+				{
+					found = tmp;
+					break;
+				}
+			}
+
+			if (found)
+				break;
+		}
+	}
+
+	return found;
 }
 
 encoded_method *find_method(DexFileFormat *dex, int class_idx, int method_name_idx)
