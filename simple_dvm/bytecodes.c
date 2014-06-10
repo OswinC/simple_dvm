@@ -39,6 +39,18 @@ static void printRegs(simple_dalvik_vm *vm)
     }
 }
 
+static void printInsFields(instance_obj *obj)
+{
+    int i = 0;
+    if (is_verbose()) {
+		printf("Instance %x of %s, with fields:\n", obj, obj->cls->name);
+		for (i = 0; i < obj->field_size; i++)
+		{
+			printf(".%s:%s: 0x%x\n", obj->fields[i].name, obj->fields[i].type, obj->fields[i].data);
+		}
+    }
+}
+
 /* 0x0b, move-result-wide
  *
  * Move the long/double result value of the previous method invocation
@@ -458,7 +470,7 @@ static int op_utils_invoke_35c_parse(DexFileFormat *dex, u1 *ptr, int *pc,
         p->reg_idx[4] = tmp & 0x0F;
 
         p->method_id = ptr[*pc + 2];
-        p->method_id |= (ptr[*pc + 3] << 4);
+        p->method_id |= (ptr[*pc + 3] << 8);
 
         tmp = ptr[*pc + 4];
         p->reg_idx[1] = tmp >> 4;
@@ -667,18 +679,14 @@ static int op_invoke_static(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, i
     return 0;
 }
 
-/* 0x59 iput va, vb, field_id
- * Stores the value in va to the field of the object referenced in vb identified by field_id.
- * 5910 0000 - iput v0, v1, Test3.os1:Ljava/lang/Object; // field@000c
- * Stores v0 to field@0000 (entry #0H in the field id table) of v1.
+/*
+ * 22c family iget operation for 4-byte long data
  */
-static int op_iput(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+static int op_utils_iget(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
 {
     int field_id = 0;
     int reg_idx_va = 0;
     int reg_idx_vb = 0;
-    instance_obj *obj;
-    unsigned int value;
     char *name_str;
     int i;
     obj_field *found = NULL;
@@ -687,29 +695,288 @@ static int op_iput(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
     reg_idx_vb = (ptr[*pc + 1] >> 4) & 0xf;
     field_id = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
 
+    name_str = get_field_item_name(dex, field_id); 
+
     if (is_verbose()) {
-        printf("iput v%d, v%d, field 0x%04x\n", reg_idx_va, reg_idx_vb, field_id);
-    }
-    load_reg_to(vm, reg_idx_va, (unsigned char *)&value);
-    load_reg_to(vm, reg_idx_vb, (unsigned char *)&obj);
-
-    name_str = get_field_item_name(dex, field_id);
-    for (i = 0; i < obj->field_size; i++)
-    {
-        if (!strncmp(name_str, obj->fields[i].name, strlen(name_str)))
-	{
-	    found = &obj->fields[i];
-	}
+        printf("op_utils_iget v%d, v%d, field 0x%04x (%s)\n", reg_idx_va, reg_idx_vb, field_id, name_str);
     }
 
-    if (!found)
-    {
-       printf("%s: no field found: %s\n", __FUNCTION__, name_str);
-       goto out;
+    load_field_to(vm, reg_idx_va, reg_idx_vb, name_str); 
+
+    return 0;
+}
+
+/*
+ * 22c family iget operation for 8-byte long data
+ */
+static int op_utils_iget_wide(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int field_id = 0;
+    int reg_idx_va = 0;
+    int reg_idx_vb = 0;
+    char *name_str;
+    int i;
+    obj_field *found = NULL;
+
+    reg_idx_va = ptr[*pc + 1] & 0xf;
+    reg_idx_vb = (ptr[*pc + 1] >> 4) & 0xf;
+    field_id = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+
+    name_str = get_field_item_name(dex, field_id); 
+
+    if (is_verbose()) {
+        printf("op_utils_iget_wide v%d, v%d, field 0x%04x (%s)\n", reg_idx_va, reg_idx_vb, field_id, name_str);
     }
 
-    store_to_field(value, found);
+    load_field_to_wide(vm, reg_idx_va, reg_idx_vb, name_str); 
 
+    return 0;
+}
+
+/* 0x52 iget va, vb, field_id
+ * Loads the field of the object referenced in vb identified by field_id to va.
+ * 5210 0000 - iget v0, v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Loads field@0000 (entry #0H in the field id table) of v1 to v0.
+ */
+static int op_iget(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_iget(dex, vm, ptr, pc);
+out:
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0x53 iget-wide va, vb, field_id
+ * Loads the field of the object referenced in vb identified by field_id to register pair of va and va+1.
+ * 5320 0000 - iget-wide v0, v2, Test3.os1:Ljava/lang/Object; // field@000c
+ * Loads field@0000 (entry #0H in the field id table) of v2 to v0 and v1.
+ */
+static int op_iget_wide(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_iget_wide(dex, vm, ptr, pc);
+out:
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0x54 iget-object va, vb, field_id
+ * Loads the field of the object referenced in vb identified by field_id to va.
+ * 5410 0000 - iget-object v0, v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Loads field@0000 (entry #0H in the field id table) of v1 to v0.
+ */
+static int op_iget_object(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_iget(dex, vm, ptr, pc);
+out:
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0x55 iget-boolean va, vb, field_id
+ * Loads the field of the object referenced in vb identified by field_id to va.
+ * 5510 0000 - iget-boolean v0, v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Loads field@0000 (entry #0H in the field id table) of v1 to v0.
+ */
+static int op_iget_boolean(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_iget(dex, vm, ptr, pc);
+out:
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0x56 iget-byte va, vb, field_id
+ * Loads the field of the object referenced in vb identified by field_id to va.
+ * 5610 0000 - iget-byte v0, v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Loads field@0000 (entry #0H in the field id table) of v1 to v0.
+ */
+static int op_iget_byte(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_iget(dex, vm, ptr, pc);
+out:
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0x57 iget-char va, vb, field_id
+ * Loads the field of the object referenced in vb identified by field_id to va.
+ * 5710 0000 - iget-char v0, v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Loads field@0000 (entry #0H in the field id table) of v1 to v0.
+ */
+static int op_iget_char(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_iget(dex, vm, ptr, pc);
+out:
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0x58 iget-short va, vb, field_id
+ * Loads the field of the object referenced in vb identified by field_id to va.
+ * 5810 0000 - iget-char v0, v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Loads field@0000 (entry #0H in the field id table) of v1 to v0.
+ */
+static int op_iget_short(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_iget(dex, vm, ptr, pc);
+out:
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
+/*
+ * 22c family iput operation for 4-byte long data
+ */
+static int op_utils_iput(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int field_id = 0;
+    int reg_idx_va = 0;
+    int reg_idx_vb = 0;
+    char *name_str;
+    int i;
+    obj_field *found = NULL;
+
+    reg_idx_va = ptr[*pc + 1] & 0xf;
+    reg_idx_vb = (ptr[*pc + 1] >> 4) & 0xf;
+    field_id = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+
+    name_str = get_field_item_name(dex, field_id); 
+
+    if (is_verbose()) {
+        printf("op_utils_iput v%d, v%d, field 0x%04x (%s)\n", reg_idx_va, reg_idx_vb, field_id, name_str);
+    }
+
+    store_to_field(vm, reg_idx_va, reg_idx_vb, name_str); 
+
+    return 0;
+}
+
+/*
+ * 22c family iput operation for 8-byte long data
+ */
+static int op_utils_iput_wide(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int field_id = 0;
+    int reg_idx_va = 0;
+    int reg_idx_vb = 0;
+    char *name_str;
+    int i;
+    obj_field *found = NULL;
+
+    reg_idx_va = ptr[*pc + 1] & 0xf;
+    reg_idx_vb = (ptr[*pc + 1] >> 4) & 0xf;
+    field_id = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+
+    name_str = get_field_item_name(dex, field_id); 
+
+    if (is_verbose()) {
+        printf("op_utils_iput_wide v%d, v%d, field 0x%04x (%s)\n", reg_idx_va, reg_idx_vb, field_id, name_str);
+    }
+
+    store_to_field_wide(vm, reg_idx_va, reg_idx_vb, name_str); 
+
+    return 0;
+}
+
+/* 0x59 iput va, vb, field_id
+ * Stores the value in va to the field of the object referenced in vb identified by field_id.
+ * 5910 0000 - iput v0, v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Stores v0 to field@0000 (entry #0H in the field id table) of v1.
+ */
+static int op_iput(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_iput(dex, vm, ptr, pc);
+out:
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0x5a iput-wide va, vb, field_id
+ * Stores the value pair in va and va+1 to the field of the object referenced in vb identified by field_id.
+ * 5a20 0000 - iput-wide v0, v2, Test3.os1:Ljava/lang/Object; // field@000c
+ * Stores v0 to field@0000 (entry #0H in the field id table) of v2.
+ */
+static int op_iput_wide(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_iput_wide(dex, vm, ptr, pc);
+out:
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0x5b iput-object va, vb, field_id
+ * Stores the value in va to the field of the object referenced in vb identified by field_id.
+ * 5b10 0000 - iput-object v0, v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Stores v0 to field@0000 (entry #0H in the field id table) of v1.
+ */
+static int op_iput_object(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_iput(dex, vm, ptr, pc);
+out:
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0x5c iput-boolean va, vb, field_id
+ * Stores the value in va to the field of the object referenced in vb identified by field_id.
+ * 5c10 0000 - iput-boolean v0, v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Stores v0 to field@0000 (entry #0H in the field id table) of v1.
+ */
+static int op_iput_boolean(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_iput(dex, vm, ptr, pc);
+out:
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0x5d iput-byte va, vb, field_id
+ * Stores the value in va to the field of the object referenced in vb identified by field_id.
+ * 5d10 0000 - iput-byte v0, v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Stores v0 to field@0000 (entry #0H in the field id table) of v1.
+ */
+static int op_iput_byte(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_iput(dex, vm, ptr, pc);
+out:
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0x5e iput-char va, vb, field_id
+ * Stores the value in va to the field of the object referenced in vb identified by field_id.
+ * 5e10 0000 - iput-char v0, v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Stores v0 to field@0000 (entry #0H in the field id table) of v1.
+ */
+static int op_iput_char(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_iput(dex, vm, ptr, pc);
+out:
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0x5f iput-short va, vb, field_id
+ * Stores the value in va to the field of the object referenced in vb identified by field_id.
+ * 5f10 0000 - iput-short v0, v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Stores v0 to field@0000 (entry #0H in the field id table) of v1.
+ */
+static int op_iput_short(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_iput(dex, vm, ptr, pc);
 out:
     /* TODO */
     *pc = *pc + 4;
@@ -1013,7 +1280,20 @@ static byteCode byteCodes[] = {
     { "const-wide/high16" , 0x19, 4,  op_const_wide_high16 },
     { "const-string"      , 0x1a, 4,  op_const_string },
     { "new-instance"      , 0x22, 4,  op_new_instance },
+    { "iget"              , 0x52, 2,  op_iget },
+    { "iget-wide"         , 0x53, 2,  op_iget_wide },
+	{ "iget-object"       , 0x54, 2,  op_iget_object },
+	{ "iget-boolean"      , 0x55, 2,  op_iget_boolean },
+	{ "iget-byte"         , 0x56, 2,  op_iget_byte },
+	{ "iget-char"         , 0x57, 2,  op_iget_char },
+	{ "iget-short"        , 0x58, 2,  op_iget_short },
     { "iput"              , 0x59, 2,  op_iput },
+    { "iput-wide"         , 0x5a, 2,  op_iput_wide },
+    { "iput-object"       , 0x5b, 2,  op_iput_object },
+    { "iput-boolean"      , 0x5c, 2,  op_iput_boolean },
+    { "iput-byte"         , 0x5d, 2,  op_iput_byte },
+    { "iput-char"         , 0x5e, 2,  op_iput_char },
+    { "iput-short"        , 0x5f, 2,  op_iput_short },
     { "sget-object"       , 0x62, 4,  op_sget_object },
     { "invoke-virtual"    , 0x6e, 6,  op_invoke_virtual },
     { "invoke-direct"     , 0x70, 6,  op_invoke_direct },

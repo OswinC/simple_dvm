@@ -111,34 +111,120 @@ void move_bottom_half_result_to_reg(simple_dalvik_vm *vm, int id)
     r->data[3] = vm->result[7];
 }
 
-void store_to_field(unsigned int v, obj_field *field)
+/*
+ * Load the value of "field_name" of the object pointed by register "obj_id" to
+ * register "val_id"
+ */
+void load_field_to(simple_dalvik_vm *vm, int val_id, int obj_id, char *field_name)
 {
-	char *type_str = field->type;
+    instance_obj *obj;
+	int i;
+	obj_field *field = NULL;
+	unsigned char *ptr = NULL;
 
-	if (!strncmp(type_str, "Z", 1))
-		field->data.cdata = (unsigned char)v;
-	if (!strncmp(type_str, "B", 1))
-		field->data.cdata = (unsigned char)v;
-	if (!strncmp(type_str, "S", 1))
-		field->data.sdata = (unsigned short)v;
-	if (!strncmp(type_str, "C", 1))
-		field->data.cdata = (unsigned char)v;
-	if (!strncmp(type_str, "I", 1))
-		field->data.idata = v;
-	if (!strncmp(type_str, "J", 1))
-		field->data.idata = v;
-	if (!strncmp(type_str, "F", 1))
-	{
-		unsigned char *dptr = (unsigned char *)&field->data.fdata;
-		unsigned char *sptr = (unsigned char *)&v;
-		memcpy(dptr, sptr, 4);
-	}
-	if (!strncmp(type_str, "D", 1))
-	{
-		/* TODO */
-	}
-	if (!strncmp(type_str, "L", 1))
-		field->data.idata = v;
-	if (!strncmp(type_str, "[", 1))
-		field->data.idata = v;
+    load_reg_to(vm, obj_id, (unsigned char *) &obj); 
+    for (i = 0; i < obj->field_size; i++)
+    {
+        if (!strncmp(field_name, obj->fields[i].name, strlen(field_name)))
+		{
+			field = &obj->fields[i];
+			break;
+		}
+	} 
+    if (!field)
+    {
+       printf("%s: no field found: %s\n", __FUNCTION__, field_name);
+	   return;
+    } 
+	ptr = (unsigned char *) &field->data;
+	store_to_reg(vm, val_id, ptr); 
+}
+
+/*
+ * Load the wide value of "field_name" of the object pointed by register "obj_id"
+ * to register pair of "val_id" & "val_id+1"
+ */
+void load_field_to_wide(simple_dalvik_vm *vm, int val_id, int obj_id, char *field_name)
+{
+    instance_obj *obj;
+	int i;
+	obj_field *field = NULL;
+	unsigned char *ptr = NULL;
+
+    load_reg_to(vm, obj_id, (unsigned char *) &obj); 
+    for (i = 0; i < obj->field_size; i++)
+    {
+        if (!strncmp(field_name, obj->fields[i].name, strlen(field_name)))
+		{
+			field = &obj->fields[i];
+			break;
+		}
+	} 
+    if (!field)
+    {
+       printf("%s: no field found: %s\n", __FUNCTION__, field_name);
+	   return;
+    } 
+	ptr = (unsigned char *) &field->data;
+    store_double_to_reg(vm, val_id, ptr + 4);
+    store_double_to_reg(vm, val_id + 1, ptr);
+}
+
+/*
+ * Store the value in register "val_id" to "field_name" of the object pointed by
+ * register "obj_id"
+ */
+void store_to_field(simple_dalvik_vm *vm, int val_id, int obj_id, char *field_name)
+{
+    instance_obj *obj;
+	int i;
+	obj_field *field = NULL;
+	unsigned char *ptr = NULL;
+
+    load_reg_to(vm, obj_id, (unsigned char *) &obj); 
+    for (i = 0; i < obj->field_size; i++)
+    {
+        if (!strncmp(field_name, obj->fields[i].name, strlen(field_name)))
+		{
+			field = &obj->fields[i];
+			break;
+		}
+	} 
+    if (!field)
+    {
+       printf("%s: no field found: %s\n", __FUNCTION__, field_name);
+	   return;
+    } 
+	ptr = (unsigned char *) &field->data;
+	load_reg_to(vm, val_id, ptr); 
+}
+
+/*
+ * Store the wide value in register pair of "val_id" & "val_id+1" to "field_name" of the object
+ * pointed by register "obj_id"
+ */
+void store_to_field_wide(simple_dalvik_vm *vm, int val_id, int obj_id, char *field_name)
+{
+    instance_obj *obj;
+	int i;
+	obj_field *field = NULL;
+	unsigned char *ptr = NULL;
+
+    load_reg_to(vm, obj_id, (unsigned char *) &obj); 
+    for (i = 0; i < obj->field_size; i++)
+    {
+        if (!strncmp(field_name, obj->fields[i].name, strlen(field_name)))
+		{
+			field = &obj->fields[i];
+			break;
+		}
+	} 
+    if (!field)
+    {
+       printf("%s: no field found: %s\n", __FUNCTION__, field_name);
+	   return;
+    } 
+	ptr = (unsigned char *) &field->data;
+    load_reg_to_double(vm, val_id, ptr + 4);
+    load_reg_to_double(vm, val_id + 1, ptr);
 }
