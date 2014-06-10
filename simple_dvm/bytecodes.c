@@ -119,7 +119,10 @@ static int op_utils_return(simple_dalvik_vm *vm)
 static int op_return_void(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
 {
     if (is_verbose())
+    {
         printf("return-void\n");
+        printRegs(vm);
+    }
 
     return op_utils_return(vm);
 }
