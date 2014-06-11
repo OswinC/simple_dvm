@@ -250,6 +250,7 @@ typedef struct _class_obj {
 	struct list_head class_list;
 	obj_field *fields;
 	int field_size;
+	struct _class_obj *parent;
 } class_obj;
 
 typedef struct _instance_obj {
