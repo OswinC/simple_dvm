@@ -386,11 +386,34 @@ class_obj *create_class_obj(simple_dalvik_vm *vm, DexFileFormat *dex, class_def_
 	int aggregated_idx = 0;
 	class_obj *obj;
 	char *name;
+	class_obj *parent;
+	class_def_item *parent_class_def;
+	class_data_item *parent_class_data;
+	int parent_type_id;
+	char *parent_name;
 
 	name = get_type_item_name(dex, class_def->class_idx);
 	obj = find_class_obj(vm, name);
 	if (obj)
 		return obj;
+
+	parent_type_id = class_def->superclass_idx;
+	parent_name = get_type_item_name(dex, parent_type_id);
+	parent_class_def = find_class_def(dex, parent_type_id);
+	parent_class_data = find_class_data(dex, parent_type_id);
+
+	printf("parent: %s\n", parent_name);
+	if (strcmp(parent_name, "Ljava/lang/Object;"))
+	{
+		parent = create_class_obj(vm, dex, parent_class_def, parent_class_data);
+		if (!parent)
+			return NULL;
+	}
+	else
+	{
+		printf("Reach the Object\n");
+		parent = NULL;
+	}
 
 	obj = (class_obj*)malloc(sizeof(class_obj) + class_data->static_fields_size * sizeof(obj_field));
 	if (!obj)
@@ -400,6 +423,7 @@ class_obj *create_class_obj(simple_dalvik_vm *vm, DexFileFormat *dex, class_def_
 	}
 
 	memset(obj, 0, sizeof(class_obj) + class_data->static_fields_size * sizeof(obj_field));
+	obj->parent = parent;
 	obj->fields = (obj_field *)((char *)obj + sizeof(class_obj));
 	obj->field_size = class_data->static_fields_size;
 	strcpy(obj->name, name);
