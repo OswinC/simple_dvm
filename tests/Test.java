@@ -17,9 +17,13 @@ class Test extends PTest
 		test = a;
 	}
 
-	public int doTest(int b)
+	public void doTest(int b)
 	{
 		test = test + b;
+	}
+
+	public int getTest()
+	{
 		return test;
 	}
 
@@ -28,7 +32,8 @@ class Test extends PTest
 		Test a = new Test(6);
 		int b;
 
-		b = a.doTest(4);
-		System.out.println("hello");
+		a.doTest(4);
+		b = a.getTest();
+		System.out.println("hello " + b);
 	}
 }
