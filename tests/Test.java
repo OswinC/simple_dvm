@@ -1,4 +1,14 @@
-class Test
+class PTest
+{
+	int t;
+
+	public PTest()
+	{
+		t = 0;
+	}
+}
+
+class Test extends PTest
 {
 	int test = 0;
 
@@ -7,9 +17,13 @@ class Test
 		test = a;
 	}
 
-	public int doTest(int b)
+	public void doTest(int b)
 	{
 		test = test + b;
+	}
+
+	public int getTest()
+	{
 		return test;
 	}
 
@@ -18,7 +32,8 @@ class Test
 		Test a = new Test(6);
 		int b;
 
-		b = a.doTest(4);
-		System.out.println("hello");
+		a.doTest(4);
+		b = a.getTest();
+		System.out.println("hello " + b);
 	}
 }

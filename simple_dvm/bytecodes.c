@@ -524,6 +524,42 @@ instance_obj *create_instance_obj(DexFileFormat *dex, class_obj *cls, class_def_
 	return obj;
 }
 
+instance_obj *new_instance_java_lang_library(simple_dalvik_vm *vm, DexFileFormat *dex, int type_id)
+{
+	class_obj *cls_obj;
+	instance_obj *ins_obj;
+	char *name = get_type_item_name(dex, type_id);
+
+	cls_obj = find_class_obj(vm, name);
+        if (!cls_obj)
+	{
+		cls_obj = (class_obj *)malloc(sizeof(class_obj));
+		if (!cls_obj)
+		{
+			printf("[%s] class obj malloc fail\n", __FUNCTION__);
+			return NULL;
+		}
+
+		memset(cls_obj, 0, sizeof(class_obj));
+		strncpy(cls_obj->name, name, strlen(name));
+		list_init(&cls_obj->class_list);
+		hash_add(&vm->root_set, &cls_obj->class_list, hash(cls_obj->name));
+	}
+
+	ins_obj = (instance_obj *)malloc(sizeof(instance_obj));
+	if (!ins_obj)
+	{
+		printf("[%s] class obj malloc fail\n", __FUNCTION__);
+
+		return NULL;
+	}
+
+	memset(ins_obj, 0, sizeof(instance_obj));
+	ins_obj->cls = cls_obj;
+
+	return ins_obj;
+}
+
 /* 0x22 new-instance vx,type
  * Instantiates an object type and puts
  * the reference of the newly created instance into vx
@@ -540,6 +576,7 @@ static int op_new_instance(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, in
     class_def_item *class_def;
     class_obj *cls_obj;
     instance_obj *ins_obj;
+    char *type_name;
 
     reg_idx_vx = ptr[*pc + 1];
     type_id = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
@@ -553,10 +590,30 @@ static int op_new_instance(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, in
         }
         printf("\n");
     }
+
+    if (!strcmp("Ljava/lang/StringBuilder;", get_type_item_name(dex, type_id)))
+    {
+        ins_obj = new_instance_java_lang_library(vm, dex, type_id);
+	if (!ins_obj)
+            return -1;
+	goto out;
+    }
+
 //    store_to_reg(vm, reg_idx_vx, (unsigned char*)&type_id);
     /* TODO */
     class_data = find_class_data(dex, type_id);
+    if (!class_data)
+    {
+        printf("[%s] No class data found: %s\n", __FUNCTION__, get_type_item_name(dex, type_id));
+        return -1;
+    }
     class_def = find_class_def(dex, type_id);
+    if (!class_data)
+    {
+        printf("[%s] No class def found: %s\n", __FUNCTION__, get_type_item_name(dex, type_id));
+        return -1;
+    }
+
 	cls_obj = create_class_obj(vm, dex, class_def, class_data);
     if (!cls_obj)
     {
@@ -572,6 +629,7 @@ static int op_new_instance(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, in
         return -1;
     }
 
+out:
     store_to_reg(vm, reg_idx_vx, (unsigned char *)&ins_obj);
 
     *pc = *pc + 4;
