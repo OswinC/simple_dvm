@@ -1,4 +1,14 @@
-class Test
+class PTest
+{
+	int t;
+
+	public PTest()
+	{
+		t = 0;
+	}
+}
+
+class Test extends PTest
 {
 	int test = 0;
 
