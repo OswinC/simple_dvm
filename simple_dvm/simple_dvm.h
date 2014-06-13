@@ -196,6 +196,8 @@ type_list *get_proto_type_list(DexFileFormat *dex, int proto_id);
 void parse_field_ids(DexFileFormat *dex, unsigned char *buf, int offset);
 field_id_item *get_field_item(DexFileFormat *dex, int field_id);
 char *get_field_item_name(DexFileFormat *dex, int field_id);
+char *get_field_class_name(DexFileFormat *dex, int field_id);
+char *gen_full_field_name(char *dest, char *class_name, char *field_name);
 
 /* method ids parser */
 void parse_method_ids(DexFileFormat *dex, unsigned char *buf, int offset);
