@@ -158,3 +158,19 @@ char *get_field_item_name(DexFileFormat *dex, int field_id)
         return get_string_data(dex, item->name_idx);
     return NULL;
 }
+
+char *get_field_class_name(DexFileFormat *dex, int field_id)
+{
+    field_id_item *item = get_field_item(dex, field_id);
+    if (item)
+        return get_type_item_name(dex, item->class_idx);
+    return NULL;
+}
+
+char *gen_full_field_name(char *dest, char *class_name, char *field_name)
+{
+	strcpy(dest, class_name);
+	strcat(dest, ".");
+	strcat(dest, field_name);
+	return dest;
+}

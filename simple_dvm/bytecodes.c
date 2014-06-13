@@ -449,38 +449,76 @@ class_obj *create_class_obj(simple_dalvik_vm *vm, DexFileFormat *dex, class_def_
 	return obj;
 }
 
-instance_obj *create_instance_obj(DexFileFormat *dex, class_obj *cls, class_data_item *class_data)
+instance_obj *create_instance_obj(DexFileFormat *dex, class_obj *cls, class_def_item *class_def, class_data_item *class_data)
 {
-	int i;
+	int i, j, k = 0;
+	int idx_cls_data = 0;
 	int aggregated_idx = 0;
 	instance_obj *obj;
+	uint fields_size = 0;
+	class_def_item *parent_class_def;
+	class_data_item *parent_class_data;
+	int parent_type_id;
+	char *parent_name;
+	class_data_item *total_class_data[256];
+	char *total_class_name[256];
+	class_data_item *cls_data_ptr;
 
-	obj = (instance_obj*)malloc(sizeof(instance_obj) + class_data->instance_fields_size * sizeof(obj_field));
+	parent_type_id = class_def->superclass_idx;
+	parent_name = get_type_item_name(dex, parent_type_id);
+	parent_class_def = find_class_def(dex, parent_type_id);
+	parent_class_data = find_class_data(dex, parent_type_id);
+
+	fields_size = class_data->instance_fields_size;
+	total_class_data[idx_cls_data] = class_data;
+	total_class_name[idx_cls_data] = get_type_item_name(dex, class_def->class_idx);
+
+	while (strcmp(parent_name, "Ljava/lang/Object;"))
+	{
+		idx_cls_data++;
+		fields_size += parent_class_data->instance_fields_size;
+		total_class_data[idx_cls_data] = parent_class_data;
+		total_class_name[idx_cls_data] = parent_name;
+
+		parent_type_id = parent_class_def->superclass_idx;
+		parent_name = get_type_item_name(dex, parent_type_id);
+		parent_class_def = find_class_def(dex, parent_type_id);
+		parent_class_data = find_class_data(dex, parent_type_id);
+	}
+
+	obj = (instance_obj*)malloc(sizeof(instance_obj) + fields_size * sizeof(obj_field));
 	if (!obj)
 	{
 		printf("alloc instance obj fail\n");
 		return NULL;
 	}
 
-	memset(obj, 0, sizeof(instance_obj) + class_data->instance_fields_size * sizeof(obj_field));
+	memset(obj, 0, sizeof(instance_obj) + fields_size * sizeof(obj_field));
 	obj->fields = (obj_field *)((char *)obj + sizeof(instance_obj));
 	obj->cls = cls;
-	obj->field_size = class_data->instance_fields_size;
+	obj->field_size = fields_size;
 
-	for (i = 0; i < class_data->instance_fields_size; i++)
+	for (j = 0; j <= idx_cls_data; j++)
 	{
-		encoded_field *field = &class_data->instance_fields[i];
-		obj_field *obj_field = &obj->fields[i];
-		field_id_item *field_item;
-		char *type_str, *name_str;
+		cls_data_ptr = total_class_data[j];
+		aggregated_idx = 0;
+		for (i = 0; i < cls_data_ptr->instance_fields_size; i++)
+		{
+			encoded_field *field = &cls_data_ptr->instance_fields[i];
+			obj_field *obj_field = &obj->fields[k++];
+			field_id_item *field_item;
+			char *type_str, *name_str;
 
-		aggregated_idx += field->field_idx_diff;
-		field_item = get_field_item(dex, aggregated_idx);
-		name_str = get_string_data(dex, field_item->name_idx);
-		type_str = get_type_item_name(dex, field_item->type_idx);
+			aggregated_idx += field->field_idx_diff;
+			field_item = get_field_item(dex, aggregated_idx);
+			name_str = get_string_data(dex, field_item->name_idx);
+			type_str = get_type_item_name(dex, field_item->type_idx);
 
-		strcpy(obj_field->name, name_str);
-		strcpy(obj_field->type, type_str);
+			strcpy(obj_field->name, total_class_name[j]);
+			strcat(obj_field->name, "."); 
+			strcat(obj_field->name, name_str); 
+			strcpy(obj_field->type, type_str);
+		}
 	}
 
 	return obj;
@@ -526,7 +564,8 @@ static int op_new_instance(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, in
         return -1;
     }
 
-    ins_obj = create_instance_obj(dex, cls_obj, class_data);
+    ins_obj = create_instance_obj(dex, cls_obj, class_def, class_data);
+	printInsFields(ins_obj);
     if (!ins_obj)
     {
         printf("ins_obj create fail: %s\n", get_string_data(dex, type_item->descriptor_idx));
@@ -792,7 +831,7 @@ static int op_utils_iget(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int 
     int field_id = 0;
     int reg_idx_va = 0;
     int reg_idx_vb = 0;
-    char *name_str;
+	char full_field_name[255];
     int i;
     obj_field *found = NULL;
 
@@ -800,13 +839,13 @@ static int op_utils_iget(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int 
     reg_idx_vb = (ptr[*pc + 1] >> 4) & 0xf;
     field_id = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
 
-    name_str = get_field_item_name(dex, field_id); 
+	gen_full_field_name(full_field_name, get_field_class_name(dex, field_id), get_field_item_name(dex, field_id));
 
     if (is_verbose()) {
-        printf("op_utils_iget v%d, v%d, field 0x%04x (%s)\n", reg_idx_va, reg_idx_vb, field_id, name_str);
+        printf("op_utils_iget v%d, v%d, field 0x%04x (%s)\n", reg_idx_va, reg_idx_vb, field_id, full_field_name);
     }
 
-    load_field_to(vm, reg_idx_va, reg_idx_vb, name_str); 
+    load_field_to(vm, reg_idx_va, reg_idx_vb, full_field_name); 
 
     return 0;
 }
@@ -819,7 +858,7 @@ static int op_utils_iget_wide(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr,
     int field_id = 0;
     int reg_idx_va = 0;
     int reg_idx_vb = 0;
-    char *name_str;
+    char full_field_name[256];
     int i;
     obj_field *found = NULL;
 
@@ -827,13 +866,13 @@ static int op_utils_iget_wide(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr,
     reg_idx_vb = (ptr[*pc + 1] >> 4) & 0xf;
     field_id = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
 
-    name_str = get_field_item_name(dex, field_id); 
+	gen_full_field_name(full_field_name, get_field_class_name(dex, field_id), get_field_item_name(dex, field_id));
 
     if (is_verbose()) {
-        printf("op_utils_iget_wide v%d, v%d, field 0x%04x (%s)\n", reg_idx_va, reg_idx_vb, field_id, name_str);
+        printf("op_utils_iget_wide v%d, v%d, field 0x%04x (%s)\n", reg_idx_va, reg_idx_vb, field_id, full_field_name);
     }
 
-    load_field_to_wide(vm, reg_idx_va, reg_idx_vb, name_str); 
+    load_field_to_wide(vm, reg_idx_va, reg_idx_vb, full_field_name); 
 
     return 0;
 }
@@ -944,7 +983,7 @@ static int op_utils_iput(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int 
     int field_id = 0;
     int reg_idx_va = 0;
     int reg_idx_vb = 0;
-    char *name_str;
+	char full_field_name[255];
     int i;
     obj_field *found = NULL;
 
@@ -952,13 +991,17 @@ static int op_utils_iput(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int 
     reg_idx_vb = (ptr[*pc + 1] >> 4) & 0xf;
     field_id = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
 
-    name_str = get_field_item_name(dex, field_id); 
+	gen_full_field_name(full_field_name, get_field_class_name(dex, field_id), get_field_item_name(dex, field_id));
 
     if (is_verbose()) {
-        printf("op_utils_iput v%d, v%d, field 0x%04x (%s)\n", reg_idx_va, reg_idx_vb, field_id, name_str);
+        printf("op_utils_iput v%d, v%d, field 0x%04x (%s)\n", reg_idx_va, reg_idx_vb, field_id, full_field_name);
     }
 
-    store_to_field(vm, reg_idx_va, reg_idx_vb, name_str); 
+	instance_obj *obj; 
+    load_reg_to(vm, reg_idx_vb, (unsigned char *) &obj); 
+	printInsFields(obj);
+    store_to_field(vm, reg_idx_va, reg_idx_vb, full_field_name); 
+	printInsFields(obj);
 
     return 0;
 }
@@ -971,7 +1014,7 @@ static int op_utils_iput_wide(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr,
     int field_id = 0;
     int reg_idx_va = 0;
     int reg_idx_vb = 0;
-    char *name_str;
+    char full_field_name[256];
     int i;
     obj_field *found = NULL;
 
@@ -979,13 +1022,13 @@ static int op_utils_iput_wide(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr,
     reg_idx_vb = (ptr[*pc + 1] >> 4) & 0xf;
     field_id = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
 
-    name_str = get_field_item_name(dex, field_id); 
+	gen_full_field_name(full_field_name, get_field_class_name(dex, field_id), get_field_item_name(dex, field_id));
 
     if (is_verbose()) {
-        printf("op_utils_iput_wide v%d, v%d, field 0x%04x (%s)\n", reg_idx_va, reg_idx_vb, field_id, name_str);
+        printf("op_utils_iput_wide v%d, v%d, field 0x%04x (%s)\n", reg_idx_va, reg_idx_vb, field_id, full_field_name);
     }
 
-    store_to_field_wide(vm, reg_idx_va, reg_idx_vb, name_str); 
+    store_to_field_wide(vm, reg_idx_va, reg_idx_vb, full_field_name); 
 
     return 0;
 }
