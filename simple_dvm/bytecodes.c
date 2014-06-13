@@ -518,7 +518,18 @@ static int op_new_instance(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, in
 //    store_to_reg(vm, reg_idx_vx, (unsigned char*)&type_id);
     /* TODO */
     class_data = find_class_data(dex, type_id);
+    if (!class_data)
+    {
+        printf("[%s] No class data found: %s\n", __FUNCTION__, get_type_item_name(dex, type_id));
+        return -1;
+    }
     class_def = find_class_def(dex, type_id);
+    if (!class_data)
+    {
+        printf("[%s] No class def found: %s\n", __FUNCTION__, get_type_item_name(dex, type_id));
+        return -1;
+    }
+
 	cls_obj = create_class_obj(vm, dex, class_def, class_data);
     if (!cls_obj)
     {
