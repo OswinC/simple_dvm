@@ -35,5 +35,9 @@ class Test extends PTest
 		a.doTest(4);
 		b = a.getTest();
 		System.out.println("hello " + b);
+
+		Test c[] = new Test[4];
+		for (int i = 0; i < 4; i++)
+			c[i] = new Test(i);
 	}
 }
