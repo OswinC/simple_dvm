@@ -636,7 +636,7 @@ static int op_aput_object(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int
 	load_reg_to(vm, reg_idx_vc, (unsigned char *)&idx);
 
 	arr_obj = (array_obj *)arr_ins_obj->priv_data;
-	if (idx > arr_obj->size)
+	if (idx >= arr_obj->size)
 	{
 		printf("[%s] Out of boundary in array %s: size: %d, idx: %d\n", __FUNCTION__,
 			arr_obj->size, idx);
