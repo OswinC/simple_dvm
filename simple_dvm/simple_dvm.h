@@ -259,7 +259,13 @@ typedef struct _instance_obj {
 	class_obj *cls;
 	obj_field *fields;
 	int field_size;
+	void *priv_data;
 } instance_obj;
+
+typedef struct _array_obj {
+	int size;
+	void *ptr[1];
+} array_obj;
 
 /* convert to int ok */
 void load_reg_to(simple_dalvik_vm *vm, int id, unsigned char *ptr);
