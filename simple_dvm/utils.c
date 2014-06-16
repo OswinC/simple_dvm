@@ -259,3 +259,40 @@ void printInsFields(instance_obj *obj)
     }
 }
 
+int cmp_reg(simple_dalvik_vm *vm, int id1, int id2, CMP_TYPE cmp_type)
+{
+	int val1;
+	int val2;
+	load_reg_to(vm, id1, (unsigned char *) &val1);
+	load_reg_to(vm, id2, (unsigned char *) &val2);
+	switch (cmp_type)
+	{
+		case EQ:
+			if (val1 == val2)
+				return 0;
+			break;
+		case NE:
+			if (val1 != val2)
+				return 0;
+			break;
+		case LT:
+			if (val1 < val2)
+				return 0;
+			break;
+		case GE:
+			if (val1 >= val2)
+				return 0;
+			break;
+		case GT:
+			if (val1 > val2)
+				return 0;
+			break;
+		case LE:
+			if (val1 <= val2)
+				return 0;
+			break;
+		default:
+			break;
+	}
+	return 1;
+}

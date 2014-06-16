@@ -280,6 +280,17 @@ void move_bottom_half_result_to_reg(simple_dalvik_vm *vm, int id);
 void move_reg_to_top_half_result(simple_dalvik_vm *vm, int id);
 void move_reg_to_bottom_half_result(simple_dalvik_vm *vm, int id);
 
+typedef enum _cmp_type {
+	EQ,
+	NE,
+	LT,
+	GE,
+	GT,
+	LE
+} CMP_TYPE;
+
+int cmp_reg(simple_dalvik_vm *vm, int id1, int id2, CMP_TYPE cmp_type);
+
 void simple_dvm_startup(DexFileFormat *dex, simple_dalvik_vm *vm, char *entry);
 void runMethod(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m);
 

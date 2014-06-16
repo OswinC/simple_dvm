@@ -636,6 +636,201 @@ out:
     return 0;
 }
 
+/* 0x28, goto +AA
+ *
+ * Unconditionally jump to the indicated instruction.
+ *
+ * 2802 - goto +0x02
+ * Jump to pc + 0x02
+ */
+static int op_goto(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int offset = 0;
+    offset = ptr[*pc + 1];
+    if (is_verbose())
+        printf("goto +0x%02x\n", offset);
+    *pc = *pc + offset * 2;
+    return 0;
+}
+
+/* 0x29, goto/16 +AAAA
+ *
+ * Unconditionally jump to the indicated instruction.
+ *
+ * 2900 1234 - goto/16 +0x3412
+ * Jump to pc + 0x3412
+ */
+static int op_goto_16(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int offset = 0;
+    offset = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+    if (is_verbose())
+        printf("goto +0x%04x\n", offset);
+    *pc = *pc + offset * 2;
+    return 0;
+}
+
+/* 0x2a, goto/32 +AAAAAAAA
+ *
+ * Unconditionally jump to the indicated instruction.
+ *
+ * 2900 1234 5678  - goto/32 +0x78563412
+ * Jump to pc + 0x78563412
+ */
+static int op_goto_32(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int offset = 0;
+    offset = ((ptr[*pc + 5] << 24) | (ptr[*pc + 4] << 16) | (ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+    if (is_verbose())
+        printf("goto +0x%08x\n", offset);
+    *pc = *pc + offset * 2;
+    return 0;
+}
+
+/* 0x32, if-eq vA, vB, +CCCC
+ *
+ * Branch to the given destination if the given two registers' values compare as equal
+ *
+ * 3201 1234 - if-eq v0, v1, +0x3412
+ * Jump to pc + 0x3412 if v0 is equal to v1
+ */
+static int op_if_eq(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int reg_idx_vy = 0;
+    int offset = 0;
+    reg_idx_vx = ptr[*pc + 1] & 0x0F;
+    reg_idx_vy = (ptr[*pc + 1] >> 4) & 0x0F;
+    offset = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+    if (is_verbose())
+        printf("if-eq v%d, v%d, +0x%04x\n", reg_idx_vx, reg_idx_vy, offset);
+	if (cmp_reg(vm, reg_idx_vx, reg_idx_vy, EQ) == 0)
+		*pc = *pc + offset * 2;
+	else
+		*pc = *pc + 4;
+    return 0;
+}
+
+/* 0x33, if-ne vA, vB, +CCCC
+ *
+ * Branch to the given destination if the given two registers' values compare as not equal
+ *
+ * 3301 1234 - if-ne v0, v1, +0x3412
+ * Jump to pc + 0x3412 if v0 is not equal to v1
+ */
+static int op_if_ne(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int reg_idx_vy = 0;
+    int offset = 0;
+    reg_idx_vx = ptr[*pc + 1] & 0x0F;
+    reg_idx_vy = (ptr[*pc + 1] >> 4) & 0x0F;
+    offset = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+    if (is_verbose())
+        printf("if-ne v%d, v%d, +0x%04x\n", reg_idx_vx, reg_idx_vy, offset);
+	if (cmp_reg(vm, reg_idx_vx, reg_idx_vy, NE) == 0)
+		*pc = *pc + offset * 2;
+	else
+		*pc = *pc + 4;
+    return 0;
+}
+
+/* 0x34, if-lt vA, vB, +CCCC
+ *
+ * Branch to the given destination if the given two registers' values compare as less than
+ *
+ * 3401 1234 - if-lt v0, v1, +0x3412
+ * Jump to pc + 0x3412 if v0 is less than v1
+ */
+static int op_if_lt(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int reg_idx_vy = 0;
+    int offset = 0;
+    reg_idx_vx = ptr[*pc + 1] & 0x0F;
+    reg_idx_vy = (ptr[*pc + 1] >> 4) & 0x0F;
+    offset = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+    if (is_verbose())
+        printf("if-lt v%d, v%d, +0x%04x\n", reg_idx_vx, reg_idx_vy, offset);
+	if (cmp_reg(vm, reg_idx_vx, reg_idx_vy, LT) == 0)
+		*pc = *pc + offset * 2;
+	else
+		*pc = *pc + 4;
+    return 0;
+}
+
+/* 0x35, if-ge vA, vB, +CCCC
+ *
+ * Branch to the given destination if the given two registers' values compare as greater or equal
+ *
+ * 3501 1234 - if-ge v0, v1, +0x3412
+ * Jump to pc + 0x3412 if v0 is greater than or equal to v1
+ */
+static int op_if_ge(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int reg_idx_vy = 0;
+    int offset = 0;
+    reg_idx_vx = ptr[*pc + 1] & 0x0F;
+    reg_idx_vy = (ptr[*pc + 1] >> 4) & 0x0F;
+    offset = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+    if (is_verbose())
+        printf("if-ge v%d, v%d, +0x%04x\n", reg_idx_vx, reg_idx_vy, offset);
+	if (cmp_reg(vm, reg_idx_vx, reg_idx_vy, GE) == 0)
+		*pc = *pc + offset * 2;
+	else
+		*pc = *pc + 4;
+    return 0;
+}
+
+/* 0x36, if-gt vA, vB, +CCCC
+ *
+ * Branch to the given destination if the given two registers' values compare as greater than
+ *
+ * 3601 1234 - if-gt v0, v1, +0x3412
+ * Jump to pc + 0x3412 if v0 is greater than v1
+ */
+static int op_if_gt(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int reg_idx_vy = 0;
+    int offset = 0;
+    reg_idx_vx = ptr[*pc + 1] & 0x0F;
+    reg_idx_vy = (ptr[*pc + 1] >> 4) & 0x0F;
+    offset = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+    if (is_verbose())
+        printf("if-gt v%d, v%d, +0x%04x\n", reg_idx_vx, reg_idx_vy, offset);
+	if (cmp_reg(vm, reg_idx_vx, reg_idx_vy, GT) == 0)
+		*pc = *pc + offset * 2;
+	else
+		*pc = *pc + 4;
+    return 0;
+}
+
+/* 0x37, if-le vA, vB, +CCCC
+ *
+ * Branch to the given destination if the given two registers' values compare as less or equal
+ *
+ * 3701 1234 - if-le v0, v1, +0x3412
+ * Jump to pc + 0x3412 if v0 is less than or equal to v1
+ */
+static int op_if_le(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int reg_idx_vy = 0;
+    int offset = 0;
+    reg_idx_vx = ptr[*pc + 1] & 0x0F;
+    reg_idx_vy = (ptr[*pc + 1] >> 4) & 0x0F;
+    offset = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+    if (is_verbose())
+        printf("if-le v%d, v%d, +0x%04x\n", reg_idx_vx, reg_idx_vy, offset);
+	if (cmp_reg(vm, reg_idx_vx, reg_idx_vy, LE) == 0)
+		*pc = *pc + offset * 2;
+	else
+		*pc = *pc + 4;
+    return 0;
+}
+
 /* 35c format
  * A|G|op BBBB F|E|D|C
  * [A=5] op {vC, vD, vE, vF, vG}, meth@BBBB
@@ -1491,6 +1686,15 @@ static byteCode byteCodes[] = {
     { "const-wide/high16" , 0x19, 4,  op_const_wide_high16 },
     { "const-string"      , 0x1a, 4,  op_const_string },
     { "new-instance"      , 0x22, 4,  op_new_instance },
+    { "goto"			  , 0x28, 2,  op_goto },
+    { "goto/16"			  , 0x29, 2,  op_goto_16 },
+    { "goto/32"			  , 0x2a, 2,  op_goto_32 },
+    { "if-eq"			  , 0x32, 4,  op_if_eq },
+    { "if-ne"			  , 0x33, 4,  op_if_ne },
+    { "if-lt"			  , 0x34, 4,  op_if_lt },
+    { "if-ge"			  , 0x35, 4,  op_if_ge },
+    { "if-gt"			  , 0x36, 4,  op_if_gt },
+    { "if-le"			  , 0x37, 4,  op_if_le },
     { "iget"              , 0x52, 2,  op_iget },
     { "iget-wide"         , 0x53, 2,  op_iget_wide },
 	{ "iget-object"       , 0x54, 2,  op_iget_object },
