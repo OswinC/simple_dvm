@@ -560,6 +560,137 @@ instance_obj *new_instance_java_lang_library(simple_dalvik_vm *vm, DexFileFormat
 	return ins_obj;
 }
 
+static instance_obj *new_array(simple_dalvik_vm *vm, DexFileFormat *dex, int type_id, int size)
+{
+	class_obj *cls_obj;
+	instance_obj *ins_obj;
+	array_obj *arr_obj;
+	char *name = get_type_item_name(dex, type_id);
+
+	cls_obj = find_class_obj(vm, name);
+        if (!cls_obj)
+	{
+		cls_obj = (class_obj *)malloc(sizeof(class_obj));
+		if (!cls_obj)
+		{
+			printf("[%s] class obj malloc fail\n", __FUNCTION__);
+			return NULL;
+		}
+
+		memset(cls_obj, 0, sizeof(class_obj));
+		strncpy(cls_obj->name, name, strlen(name));
+		list_init(&cls_obj->class_list);
+		hash_add(&vm->root_set, &cls_obj->class_list, hash(cls_obj->name));
+	}
+
+	ins_obj = (instance_obj *)malloc(sizeof(instance_obj));
+	if (!ins_obj)
+	{
+		printf("[%s] instance obj malloc fail\n", __FUNCTION__);
+
+		return NULL;
+	}
+
+	arr_obj = (array_obj *)malloc(sizeof(array_obj) + (size - 1) * sizeof(void *));
+	if (!arr_obj)
+	{
+		printf("[%s] array obj malloc fail\n", __FUNCTION__);
+		free(ins_obj);
+
+		return NULL;
+	}
+
+	memset(ins_obj, 0, sizeof(instance_obj));
+	ins_obj->cls = cls_obj;
+	ins_obj->priv_data = (void *)arr_obj;
+
+	return ins_obj;
+}
+
+/* 0x4d aput-object va, vb, vc
+ * Store an object reference pointed by va in the element of an array pointed by vb,
+ * which is indexed by vc
+ * 4d02 0100 - aput-object v2, v1, v0
+ */
+static int op_aput_object(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	int reg_idx_va = 0;
+	int reg_idx_vb = 0;
+	int reg_idx_vc = 0;
+	int size;
+	int idx;
+	instance_obj *ins_obj, *arr_ins_obj;
+	array_obj *arr_obj;
+
+	reg_idx_va = ptr[*pc + 1];
+	reg_idx_vb = ptr[*pc + 2];
+	reg_idx_vc = ptr[*pc + 3];
+
+	if (is_verbose()) {
+		printf("aput-object v%d, v%d, v%d", reg_idx_va, reg_idx_vb, reg_idx_vc);
+		printf("\n");
+	}
+
+	load_reg_to(vm, reg_idx_va, (unsigned char *)&ins_obj);
+	load_reg_to(vm, reg_idx_vb, (unsigned char *)&arr_ins_obj);
+	load_reg_to(vm, reg_idx_vc, (unsigned char *)&idx);
+
+	arr_obj = (array_obj *)arr_ins_obj->priv_data;
+	if (idx >= arr_obj->size)
+	{
+		printf("[%s] Out of boundary in array %s: size: %d, idx: %d\n", __FUNCTION__,
+			arr_obj->size, idx);
+		return -1;
+	}
+
+	arr_obj->ptr[idx] = ins_obj;
+
+	*pc = *pc + 4;
+	return -1;
+}
+
+/* 0x23 new-array va, vb, type
+ * Instantiates an array of given object type
+ * the reference of the newly created array into va
+ * 2321 1500 - new-instance v1, v2, java.io.FileInputStream // type@0015
+ * Instantiates of array of type@0015 (entry #15H in the type table)
+ * and puts its reference into v1.
+ */
+static int op_new_array(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_va = 0;
+    int reg_idx_vb = 0;
+    int type_id = 0;
+    type_id_item *type_item = 0;
+    class_obj *cls_obj;
+    instance_obj *ins_obj;
+    int size;
+
+    reg_idx_va = ptr[*pc + 1] & 0xf;
+    reg_idx_vb = (ptr[*pc + 1] >> 4) & 0xf;
+    type_id = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+
+    type_item = get_type_item(dex, type_id);
+
+    if (is_verbose()) {
+        printf("new-array v%d, v%d, type_id 0x%04x", reg_idx_va, reg_idx_vb, type_id);
+        if (type_item != 0) {
+            printf(" %s", get_string_data(dex, type_item->descriptor_idx));
+        }
+        printf("\n");
+    }
+
+    load_reg_to(vm, reg_idx_vb, (unsigned char *)&size);
+    ins_obj = new_array(vm, dex, type_id, size);
+    if (!ins_obj)
+       return -1;
+
+    store_to_reg(vm, reg_idx_va, (unsigned char *)&ins_obj);
+
+    *pc = *pc + 4;
+    return -1;
+}
+
 /* 0x22 new-instance vx,type
  * Instantiates an object type and puts
  * the reference of the newly created instance into vx
@@ -1695,6 +1826,8 @@ static byteCode byteCodes[] = {
     { "if-ge"			  , 0x35, 4,  op_if_ge },
     { "if-gt"			  , 0x36, 4,  op_if_gt },
     { "if-le"			  , 0x37, 4,  op_if_le },
+    { "new-array"         , 0x23, 4,  op_new_array },
+    { "aput-object"       , 0x4d, 4,  op_aput_object },
     { "iget"              , 0x52, 2,  op_iget },
     { "iget-wide"         , 0x53, 2,  op_iget_wide },
 	{ "iget-object"       , 0x54, 2,  op_iget_object },
