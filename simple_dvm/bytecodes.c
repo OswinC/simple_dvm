@@ -777,7 +777,7 @@ out:
 static int op_goto(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
 {
     int offset = 0;
-    offset = ptr[*pc + 1];
+    offset = (signed char) ptr[*pc + 1];
     if (is_verbose())
         printf("goto +0x%02x\n", offset);
     *pc = *pc + offset * 2;
@@ -794,7 +794,7 @@ static int op_goto(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
 static int op_goto_16(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
 {
     int offset = 0;
-    offset = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+    offset = (signed short) ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
     if (is_verbose())
         printf("goto +0x%04x\n", offset);
     *pc = *pc + offset * 2;
@@ -811,7 +811,7 @@ static int op_goto_16(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc
 static int op_goto_32(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
 {
     int offset = 0;
-    offset = ((ptr[*pc + 5] << 24) | (ptr[*pc + 4] << 16) | (ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+    offset = (signed int) ((ptr[*pc + 5] << 24) | (ptr[*pc + 4] << 16) | (ptr[*pc + 3] << 8) | ptr[*pc + 2]);
     if (is_verbose())
         printf("goto +0x%08x\n", offset);
     *pc = *pc + offset * 2;
@@ -832,7 +832,7 @@ static int op_if_eq(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
     int offset = 0;
     reg_idx_vx = ptr[*pc + 1] & 0x0F;
     reg_idx_vy = (ptr[*pc + 1] >> 4) & 0x0F;
-    offset = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+    offset = (signed short) ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
     if (is_verbose())
         printf("if-eq v%d, v%d, +0x%04x\n", reg_idx_vx, reg_idx_vy, offset);
 	if (cmp_reg(vm, reg_idx_vx, reg_idx_vy, EQ) == 0)
@@ -856,7 +856,7 @@ static int op_if_ne(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
     int offset = 0;
     reg_idx_vx = ptr[*pc + 1] & 0x0F;
     reg_idx_vy = (ptr[*pc + 1] >> 4) & 0x0F;
-    offset = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+    offset = (signed short) ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
     if (is_verbose())
         printf("if-ne v%d, v%d, +0x%04x\n", reg_idx_vx, reg_idx_vy, offset);
 	if (cmp_reg(vm, reg_idx_vx, reg_idx_vy, NE) == 0)
@@ -880,7 +880,7 @@ static int op_if_lt(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
     int offset = 0;
     reg_idx_vx = ptr[*pc + 1] & 0x0F;
     reg_idx_vy = (ptr[*pc + 1] >> 4) & 0x0F;
-    offset = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+    offset = (signed short) ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
     if (is_verbose())
         printf("if-lt v%d, v%d, +0x%04x\n", reg_idx_vx, reg_idx_vy, offset);
 	if (cmp_reg(vm, reg_idx_vx, reg_idx_vy, LT) == 0)
@@ -904,7 +904,7 @@ static int op_if_ge(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
     int offset = 0;
     reg_idx_vx = ptr[*pc + 1] & 0x0F;
     reg_idx_vy = (ptr[*pc + 1] >> 4) & 0x0F;
-    offset = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+    offset = (signed short) ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
     if (is_verbose())
         printf("if-ge v%d, v%d, +0x%04x\n", reg_idx_vx, reg_idx_vy, offset);
 	if (cmp_reg(vm, reg_idx_vx, reg_idx_vy, GE) == 0)
@@ -928,7 +928,7 @@ static int op_if_gt(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
     int offset = 0;
     reg_idx_vx = ptr[*pc + 1] & 0x0F;
     reg_idx_vy = (ptr[*pc + 1] >> 4) & 0x0F;
-    offset = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+    offset = (signed short) ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
     if (is_verbose())
         printf("if-gt v%d, v%d, +0x%04x\n", reg_idx_vx, reg_idx_vy, offset);
 	if (cmp_reg(vm, reg_idx_vx, reg_idx_vy, GT) == 0)
@@ -952,7 +952,7 @@ static int op_if_le(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
     int offset = 0;
     reg_idx_vx = ptr[*pc + 1] & 0x0F;
     reg_idx_vy = (ptr[*pc + 1] >> 4) & 0x0F;
-    offset = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+    offset = (signed short) ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
     if (is_verbose())
         printf("if-le v%d, v%d, +0x%04x\n", reg_idx_vx, reg_idx_vy, offset);
 	if (cmp_reg(vm, reg_idx_vx, reg_idx_vy, LE) == 0)
