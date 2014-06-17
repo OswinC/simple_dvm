@@ -822,8 +822,8 @@ static int op_goto_32(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc
  *
  * Branch to the given destination if the given two registers' values compare as equal
  *
- * 3201 1234 - if-eq v0, v1, +0x3412
- * Jump to pc + 0x3412 if v0 is equal to v1
+ * 3201 1234 - if-eq v1, v0, +0x3412
+ * Jump to pc + 0x3412 if v1 is equal to v0
  */
 static int op_if_eq(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
 {
@@ -846,8 +846,8 @@ static int op_if_eq(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
  *
  * Branch to the given destination if the given two registers' values compare as not equal
  *
- * 3301 1234 - if-ne v0, v1, +0x3412
- * Jump to pc + 0x3412 if v0 is not equal to v1
+ * 3301 1234 - if-ne v1, v0, +0x3412
+ * Jump to pc + 0x3412 if v1 is not equal to v0
  */
 static int op_if_ne(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
 {
@@ -870,8 +870,8 @@ static int op_if_ne(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
  *
  * Branch to the given destination if the given two registers' values compare as less than
  *
- * 3401 1234 - if-lt v0, v1, +0x3412
- * Jump to pc + 0x3412 if v0 is less than v1
+ * 3401 1234 - if-lt v1, v0, +0x3412
+ * Jump to pc + 0x3412 if v1 is less than v0
  */
 static int op_if_lt(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
 {
@@ -894,8 +894,8 @@ static int op_if_lt(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
  *
  * Branch to the given destination if the given two registers' values compare as greater or equal
  *
- * 3501 1234 - if-ge v0, v1, +0x3412
- * Jump to pc + 0x3412 if v0 is greater than or equal to v1
+ * 3501 1234 - if-ge v1, v0, +0x3412
+ * Jump to pc + 0x3412 if v1 is greater than or equal to v0
  */
 static int op_if_ge(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
 {
@@ -918,8 +918,8 @@ static int op_if_ge(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
  *
  * Branch to the given destination if the given two registers' values compare as greater than
  *
- * 3601 1234 - if-gt v0, v1, +0x3412
- * Jump to pc + 0x3412 if v0 is greater than v1
+ * 3601 1234 - if-gt v1, v0, +0x3412
+ * Jump to pc + 0x3412 if v1 is greater than v0
  */
 static int op_if_gt(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
 {
@@ -942,8 +942,8 @@ static int op_if_gt(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
  *
  * Branch to the given destination if the given two registers' values compare as less or equal
  *
- * 3701 1234 - if-le v0, v1, +0x3412
- * Jump to pc + 0x3412 if v0 is less than or equal to v1
+ * 3701 1234 - if-le v1, v0, +0x3412
+ * Jump to pc + 0x3412 if v1 is less than or equal to v0
  */
 static int op_if_le(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
 {
