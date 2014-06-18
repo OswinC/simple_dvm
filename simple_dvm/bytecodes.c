@@ -601,6 +601,8 @@ static instance_obj *new_array(simple_dalvik_vm *vm, DexFileFormat *dex, int typ
 	}
 
 	memset(ins_obj, 0, sizeof(instance_obj));
+	memset(arr_obj, 0, sizeof(instance_obj));
+	arr_obj->size = size;
 	ins_obj->cls = cls_obj;
 	ins_obj->priv_data = (void *)arr_obj;
 
@@ -639,7 +641,7 @@ static int op_aput_object(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int
 	if (idx >= arr_obj->size)
 	{
 		printf("[%s] Out of boundary in array %s: size: %d, idx: %d\n", __FUNCTION__,
-			arr_obj->size, idx);
+			arr_ins_obj->cls->name, arr_obj->size, idx);
 		return -1;
 	}
 
