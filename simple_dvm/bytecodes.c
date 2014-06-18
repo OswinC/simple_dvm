@@ -1798,6 +1798,56 @@ static int op_mul_double_2addr(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr
     return 0;
 }
 
+/* 0xd9 rsub-int/lit8 vx,vy,lit8
+ * Calculates lit8-vy and stores the result into vx.
+ * D900 0203 - rsub-int/lit8 v0,v2, #int3
+ * Calculates 3-v2 and stores the result into v0.
+ */
+static int op_rsub_int_lit8(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int reg_idx_vy = 0;
+    int x = 0, y = 0 ;
+    int z = 0;
+    reg_idx_vx = ptr[*pc + 1];
+    reg_idx_vy = ptr[*pc + 2];
+    z = ptr[*pc + 3];
+
+    if (is_verbose())
+        printf("add-int/lit8 v%d, v%d, #int%d\n", reg_idx_vx, reg_idx_vy, z);
+    load_reg_to(vm, reg_idx_vy, (unsigned char *) &y);
+    x = z - y;
+    store_to_reg(vm, reg_idx_vx, (unsigned char *) &x);
+
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0xda mul-int/lit8 vx,vy,lit8
+ * Calculates vy*lit8 and stores the result into vx.
+ * DA00 0203 - mul-int/lit8 v0,v2, #int3
+ * Calculates v2*3 and stores the result into v0.
+ */
+static int op_mul_int_lit8(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int reg_idx_vy = 0;
+    int x = 0, y = 0 ;
+    int z = 0;
+    reg_idx_vx = ptr[*pc + 1];
+    reg_idx_vy = ptr[*pc + 2];
+    z = ptr[*pc + 3];
+
+    if (is_verbose())
+        printf("add-int/lit8 v%d, v%d, #int%d\n", reg_idx_vx, reg_idx_vy, z);
+    load_reg_to(vm, reg_idx_vy, (unsigned char *) &y);
+    x = y * z;
+    store_to_reg(vm, reg_idx_vx, (unsigned char *) &x);
+
+    *pc = *pc + 4;
+    return 0;
+}
+
 /* 0xd8 add-int/lit8 vx,vy,lit8
  * Calculates vy+lit8 and stores the result into vx.
  * D800 0203 - add-int/lit8 v0,v2, #int3
@@ -1845,6 +1895,56 @@ static int op_div_int_lit8(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, in
     load_reg_to(vm, reg_idx_vy, (unsigned char *) &y);
     x = y % z;
     x = (y - x) / z;
+    store_to_reg(vm, reg_idx_vx, (unsigned char *) &x);
+
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0xdc rem-int/lit8 vx,vy,lit8
+ * Calculates vy%lit8 and stores the result into vx.
+ * DC00 0203 - rem-int/lit8 v0,v2, #int3
+ * Calculates v2%3 and stores the result into v0.
+ */
+static int op_rem_int_lit8(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int reg_idx_vy = 0;
+    int x = 0, y = 0 ;
+    int z = 0;
+    reg_idx_vx = ptr[*pc + 1];
+    reg_idx_vy = ptr[*pc + 2];
+    z = ptr[*pc + 3];
+
+    if (is_verbose())
+        printf("div-int/lit8 v%d, v%d, #int%d\n", reg_idx_vx, reg_idx_vy, z);
+    load_reg_to(vm, reg_idx_vy, (unsigned char *) &y);
+    x = y % z;
+    store_to_reg(vm, reg_idx_vx, (unsigned char *) &x);
+
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0xdd and-int/lit8 vx,vy,lit8
+ * Calculates vy&lit8 and stores the result into vx.
+ * DC00 0203 - rem-int/lit8 v0,v2, #int3
+ * Calculates v2&3 and stores the result into v0.
+ */
+static int op_and_int_lit8(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int reg_idx_vy = 0;
+    int x = 0, y = 0 ;
+    int z = 0;
+    reg_idx_vx = ptr[*pc + 1];
+    reg_idx_vy = ptr[*pc + 2];
+    z = ptr[*pc + 3];
+
+    if (is_verbose())
+        printf("div-int/lit8 v%d, v%d, #int%d\n", reg_idx_vx, reg_idx_vy, z);
+    load_reg_to(vm, reg_idx_vy, (unsigned char *) &y);
+    x = y & z;
     store_to_reg(vm, reg_idx_vx, (unsigned char *) &x);
 
     *pc = *pc + 4;
@@ -1903,7 +2003,11 @@ static byteCode byteCodes[] = {
     { "add-double/2addr"  , 0xcb, 2,  op_add_double_2addr},
     { "mul-double/2addr"  , 0xcd, 2,  op_mul_double_2addr},
     { "add-int/lit8"      , 0xd8, 4,  op_add_int_lit8 },
+    { "rsub-int/lit8"     , 0xd9, 4,  op_rsub_int_lit8 },
+    { "mul-int/lit8"      , 0xda, 4,  op_mul_int_lit8 },
     { "div-int/lit8"      , 0xdb, 4,  op_div_int_lit8 },
+    { "rem-int/lit8"      , 0xdc, 4,  op_rem_int_lit8 },
+    { "and-int/lit8"      , 0xdd, 4,  op_and_int_lit8 },
 };
 static int byteCode_size = sizeof(byteCodes) / sizeof(byteCode);
 
