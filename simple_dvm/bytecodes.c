@@ -1798,6 +1798,32 @@ static int op_mul_double_2addr(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr
     return 0;
 }
 
+/* 0xd8 add-int/lit8 vx,vy,lit8
+ * Calculates vy+lit8 and stores the result into vx.
+ * D800 0203 - add-int/lit8 v0,v2, #int3
+ * Calculates v2+3 and stores the result into v0.
+ */
+static int op_add_int_lit8(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int reg_idx_vy = 0;
+    int x = 0, y = 0 ;
+    int z = 0;
+    reg_idx_vx = ptr[*pc + 1];
+    reg_idx_vy = ptr[*pc + 2];
+    z = ptr[*pc + 3];
+
+    if (is_verbose())
+        printf("add-int/lit8 v%d, v%d, #int%d\n", reg_idx_vx, reg_idx_vy, z);
+    /* x = y + z */
+    load_reg_to(vm, reg_idx_vy, (unsigned char *) &y);
+    x = y + z;
+    store_to_reg(vm, reg_idx_vx, (unsigned char *) &x);
+
+    *pc = *pc + 4;
+    return 0;
+}
+
 /* 0xd9 rsub-int/lit8 vx,vy,lit8
  * Calculates lit8-vy and stores the result into vx.
  * D900 0203 - rsub-int/lit8 v0,v2, #int3
@@ -1842,32 +1868,6 @@ static int op_mul_int_lit8(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, in
         printf("add-int/lit8 v%d, v%d, #int%d\n", reg_idx_vx, reg_idx_vy, z);
     load_reg_to(vm, reg_idx_vy, (unsigned char *) &y);
     x = y * z;
-    store_to_reg(vm, reg_idx_vx, (unsigned char *) &x);
-
-    *pc = *pc + 4;
-    return 0;
-}
-
-/* 0xd8 add-int/lit8 vx,vy,lit8
- * Calculates vy+lit8 and stores the result into vx.
- * D800 0203 - add-int/lit8 v0,v2, #int3
- * Calculates v2+3 and stores the result into v0.
- */
-static int op_add_int_lit8(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
-{
-    int reg_idx_vx = 0;
-    int reg_idx_vy = 0;
-    int x = 0, y = 0 ;
-    int z = 0;
-    reg_idx_vx = ptr[*pc + 1];
-    reg_idx_vy = ptr[*pc + 2];
-    z = ptr[*pc + 3];
-
-    if (is_verbose())
-        printf("add-int/lit8 v%d, v%d, #int%d\n", reg_idx_vx, reg_idx_vy, z);
-    /* x = y + z */
-    load_reg_to(vm, reg_idx_vy, (unsigned char *) &y);
-    x = y + z;
     store_to_reg(vm, reg_idx_vx, (unsigned char *) &x);
 
     *pc = *pc + 4;
