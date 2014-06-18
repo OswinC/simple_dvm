@@ -646,7 +646,7 @@ static int op_aput_object(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int
 	arr_obj->ptr[idx] = ins_obj;
 
 	*pc = *pc + 4;
-	return -1;
+	return 0;
 }
 
 /* 0x23 new-array va, vb, type
@@ -688,7 +688,7 @@ static int op_new_array(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *
     store_to_reg(vm, reg_idx_va, (unsigned char *)&ins_obj);
 
     *pc = *pc + 4;
-    return -1;
+    return 0;
 }
 
 /* 0x22 new-instance vx,type
