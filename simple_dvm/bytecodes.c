@@ -1007,7 +1007,8 @@ static int invoke_method(char *name, DexFileFormat *dex, simple_dalvik_vm *vm,
 	int ins_size;
 	int reg_size;
 	int target_idx, i;
-	u4 value;
+	u4 values[32];
+	u4 tmp;
 
 	if (!strcmp(name, "invoke-direct"))
 		method = find_method(dex, (int)m->class_idx, (int)m->name_idx);
@@ -1030,6 +1031,9 @@ static int invoke_method(char *name, DexFileFormat *dex, simple_dalvik_vm *vm,
 		return 0;
 	}
 
+	if (is_verbose())
+		printRegs(vm);
+
 	if (new_invoke_frame(dex, vm, method))
 	{
 		printf("new frame fail\n");
@@ -1040,18 +1044,34 @@ static int invoke_method(char *name, DexFileFormat *dex, simple_dalvik_vm *vm,
 	reg_size = method->code_item.registers_size;
 	target_idx = reg_size - 1;
 
-	for (i = ins_size - 1; i >= 0; i--)
+	/*
+	 * Load register contents to internal storage
+	 */
+	for (i = ins_size - 1; i >= 0; i--, target_idx--)
 	{
-		load_reg_to(vm, p->reg_idx[i], (u1 *)&value);
-		store_to_reg(vm, target_idx, (u1 *)&value);
-		target_idx--;
+		if (is_verbose())
+			printf("reg %d --> %d\n", p->reg_idx[i], target_idx);
+		load_reg_to(vm, p->reg_idx[i], (u1 *)&values[target_idx]);
 	}
 
-	value = 0;
+	/*
+	 * Store contents to destination registers
+	 */
+	target_idx = reg_size - 1;
+	for (i = ins_size - 1; i >= 0; i--, target_idx--)
+		store_to_reg(vm, target_idx, (u1 *)&values[target_idx]);
+
+	/*
+	 * Initialize other registers with 0
+	 */
+	tmp = 0;
 	for (i = target_idx; i >= 0; i--)
 	{
-		store_to_reg(vm, i, (u1 *)&value);
+		store_to_reg(vm, i, (u1 *)&tmp);
 	}
+
+	if (is_verbose())
+		printRegs(vm);
 
 	vm->pc = 0;
 	runMethod(dex, vm, method);
