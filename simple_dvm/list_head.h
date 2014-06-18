@@ -49,7 +49,7 @@ struct list_head
 };
 
 #define container_of(ptr, st, en) \
-	({char *p = (char *)&(((st *)0)->en); (st *)((char *)ptr - (unsigned long)p);})
+	({char *__p = (char *)&(((st *)0)->en); (st *)((char *)ptr - (unsigned long)__p);})
 
 #define foreach(e, list) \
 	for (e = (list)->next; e != (list); e = e->next)
