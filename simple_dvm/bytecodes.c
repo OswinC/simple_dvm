@@ -1840,7 +1840,7 @@ static int op_div_int_lit8(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, in
     z = ptr[*pc + 3];
 
     if (is_verbose())
-        printf("add-int v%d, v%d, #int%d\n", reg_idx_vx, reg_idx_vy, z);
+        printf("div-int/lit8 v%d, v%d, #int%d\n", reg_idx_vx, reg_idx_vy, z);
     /* x = y + z */
     load_reg_to(vm, reg_idx_vy, (unsigned char *) &y);
     x = y % z;
