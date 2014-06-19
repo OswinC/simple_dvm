@@ -247,12 +247,19 @@ typedef struct _obj_field {
 	} data;
 } obj_field;
 
+typedef struct _vtable_item {
+	char name[255];
+	encoded_method *method;
+} vtable_item;
+
 typedef struct _class_obj {
 	char name[255];
 	struct list_head class_list;
 	obj_field *fields;
 	int field_size;
 	struct _class_obj *parent;
+	vtable_item *vtable;
+	int vtable_size;
 } class_obj;
 
 typedef struct _instance_obj {
