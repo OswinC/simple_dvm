@@ -6,6 +6,11 @@ class PTest
 	{
 		t = 0;
 	}
+
+	public void doTest(int b)
+	{
+		System.out.println("PTEST");
+	}
 }
 
 class Test extends PTest
@@ -20,6 +25,7 @@ class Test extends PTest
 	public void doTest(int b)
 	{
 		test = test + b;
+		System.out.println("TEST");
 	}
 
 	public int getTest()
@@ -29,12 +35,12 @@ class Test extends PTest
 
 	public static void main(String args[])
 	{
-		Test a = new Test(6);
+		PTest a = new Test(6);
 		int b;
 
 		a.doTest(4);
-		b = a.getTest();
-		System.out.println("hello " + b);
+//		b = a.getTest();
+//		System.out.println("hello " + b);
 
 		Test c[] = new Test[4];
 		for (int i = 0; i < 4; i++)
