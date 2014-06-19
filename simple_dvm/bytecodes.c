@@ -1840,7 +1840,7 @@ static int op_rsub_int_lit8(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, i
     z = ptr[*pc + 3];
 
     if (is_verbose())
-        printf("add-int/lit8 v%d, v%d, #int%d\n", reg_idx_vx, reg_idx_vy, z);
+        printf("rsub-int/lit8 v%d, v%d, #int%d\n", reg_idx_vx, reg_idx_vy, z);
     load_reg_to(vm, reg_idx_vy, (unsigned char *) &y);
     x = z - y;
     store_to_reg(vm, reg_idx_vx, (unsigned char *) &x);
@@ -1865,7 +1865,7 @@ static int op_mul_int_lit8(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, in
     z = ptr[*pc + 3];
 
     if (is_verbose())
-        printf("add-int/lit8 v%d, v%d, #int%d\n", reg_idx_vx, reg_idx_vy, z);
+        printf("mul-int/lit8 v%d, v%d, #int%d\n", reg_idx_vx, reg_idx_vy, z);
     load_reg_to(vm, reg_idx_vy, (unsigned char *) &y);
     x = y * z;
     store_to_reg(vm, reg_idx_vx, (unsigned char *) &x);
@@ -1917,7 +1917,7 @@ static int op_rem_int_lit8(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, in
     z = ptr[*pc + 3];
 
     if (is_verbose())
-        printf("div-int/lit8 v%d, v%d, #int%d\n", reg_idx_vx, reg_idx_vy, z);
+        printf("rem-int/lit8 v%d, v%d, #int%d\n", reg_idx_vx, reg_idx_vy, z);
     load_reg_to(vm, reg_idx_vy, (unsigned char *) &y);
     x = y % z;
     store_to_reg(vm, reg_idx_vx, (unsigned char *) &x);
@@ -1942,7 +1942,7 @@ static int op_and_int_lit8(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, in
     z = ptr[*pc + 3];
 
     if (is_verbose())
-        printf("div-int/lit8 v%d, v%d, #int%d\n", reg_idx_vx, reg_idx_vy, z);
+        printf("and-int/lit8 v%d, v%d, #int%d\n", reg_idx_vx, reg_idx_vy, z);
     load_reg_to(vm, reg_idx_vy, (unsigned char *) &y);
     x = y & z;
     store_to_reg(vm, reg_idx_vx, (unsigned char *) &x);
