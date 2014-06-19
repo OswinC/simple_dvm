@@ -9,7 +9,7 @@
 #include "java_lib.h"
 
 encoded_method *find_method(DexFileFormat *dex, int class_idx, int method_name_idx);
-encoded_method *find_vmethod(DexFileFormat *dex, int class_idx, int method_name_idx);
+encoded_method *find_vmethod(DexFileFormat *dex, instance_obj *ins_obj, int class_idx, int method_name_idx);
 int new_invoke_frame(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m);
 void stack_push(simple_dalvik_vm *vm, u4 data);
 u4 stack_pop(simple_dalvik_vm *vm);
@@ -1015,7 +1015,12 @@ static int invoke_method(char *name, DexFileFormat *dex, simple_dalvik_vm *vm,
 	if (!strcmp(name, "invoke-direct"))
 		method = find_method(dex, (int)m->class_idx, (int)m->name_idx);
 	else if (!strcmp(name, "invoke-virtual"))
-		method = find_vmethod(dex, (int)m->class_idx, (int)m->name_idx);
+	{
+		instance_obj *ins_obj;
+
+		load_reg_to(vm, p->reg_idx[0], (unsigned char *)&ins_obj);
+		method = find_vmethod(dex, ins_obj, (int)m->class_idx, (int)m->name_idx);
+	}
 //	else if (strcmp(name, "invoke-static"))
 		// FIXME
 	else
@@ -2096,11 +2101,24 @@ void runMainMethod(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m)
     runMethod(dex, vm, m);
 }
 
-encoded_method *find_vmethod(DexFileFormat *dex, int class_idx, int method_name_idx)
+encoded_method *find_vmethod(DexFileFormat *dex, instance_obj *ins_obj, int class_idx, int method_name_idx)
 {
 	int i, j;
 	encoded_method *found = NULL;
+	vtable_item *vtable = ins_obj->cls->vtable;
+	int vtable_size = ins_obj->cls->vtable_size;
+	char *name = get_string_data(dex, method_name_idx);
 
+	for (i = 0; i < vtable_size; i++)
+	{
+		if (!strncpy(vtable[i].name, name, strlen(name)))
+		{
+			found = vtable[i].method;
+			break;
+		}
+	}
+
+	/*
 	for (i = 0; i < dex->header.classDefsSize; i++)
 	{
 		if (dex->class_def_item[i].class_idx == class_idx)
@@ -2126,6 +2144,7 @@ encoded_method *find_vmethod(DexFileFormat *dex, int class_idx, int method_name_
 				break;
 		}
 	}
+	*/
 
 	return found;
 }
