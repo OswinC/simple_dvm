@@ -1623,11 +1623,23 @@ static int op_utils_sput(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int 
         printf("op_utils_sput v%d, field 0x%04x (%s.%s)\n", reg_idx_va, field_id, class_name, field_name);
     }
 
-//	instance_obj *obj;
- //   load_reg_to(vm, reg_idx_vb, (unsigned char *) &obj);
-//	printInsFields(obj);
+    if (is_verbose())
+    {
+	    class_obj *obj;
+
+	    obj = find_class_obj(vm, class_name);
+	    printStaticFields(obj);
+    }
+
     store_to_static_field(vm, reg_idx_va, class_name, field_name);
-//	printInsFields(obj);
+
+    if (is_verbose())
+    {
+	    class_obj *obj;
+
+	    obj = find_class_obj(vm, class_name);
+	    printStaticFields(obj);
+    }
 
     return 0;
 }
@@ -1655,11 +1667,23 @@ static int op_utils_sput_wide(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr,
         printf("op_utils_sput v%d, field 0x%04x (%s.%s)\n", reg_idx_va, field_id, class_name, field_name);
     }
 
-//	instance_obj *obj;
- //   load_reg_to(vm, reg_idx_vb, (unsigned char *) &obj);
-//	printInsFields(obj);
+    if (is_verbose())
+    {
+	    class_obj *obj;
+
+	    obj = find_class_obj(vm, class_name);
+	    printStaticFields(obj);
+    }
+
     store_to_static_field_wide(vm, reg_idx_va, class_name, field_name);
-//	printInsFields(obj);
+
+    if (is_verbose())
+    {
+	    class_obj *obj;
+
+	    obj = find_class_obj(vm, class_name);
+	    printStaticFields(obj);
+    }
 
     return 0;
 }

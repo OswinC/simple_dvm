@@ -321,6 +321,18 @@ void store_to_field_wide(simple_dalvik_vm *vm, int val_id, int obj_id, char *fie
     load_reg_to_double(vm, val_id + 1, ptr);
 }
 
+void printStaticFields(class_obj *cls)
+{
+    int i = 0;
+    if (is_verbose()) {
+		printf("Class %x of %s, with fields:\n", cls, cls->name);
+		for (i = 0; i < cls->field_size; i++)
+		{
+			printf(".%s:%s: 0x%x\n", cls->fields[i].name, cls->fields[i].type, cls->fields[i].data);
+		}
+    }
+}
+
 void printInsFields(instance_obj *obj)
 {
     int i = 0;
