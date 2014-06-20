@@ -1844,6 +1844,21 @@ out:
     return 0;
 }
 
+/* 0x67 sput vx,field_id
+ * Store vx to the object reference field identified by the field_id.
+ * 6701 0C00 - sput v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Store v1 to field@000c (entry #CH in the field id table).
+ */
+static int op_sput(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_sput(dex, vm, ptr, pc);
+
+out:
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
 /* 0x62 sget-object vx,field_id
  * Reads the object reference field identified by the field_id into vx.
  * 6201 0C00 - sget-object v1, Test3.os1:Ljava/lang/Object; // field@000c
@@ -2304,6 +2319,7 @@ static byteCode byteCodes[] = {
     { "iput-char"         , 0x5e, 2,  op_iput_char },
     { "iput-short"        , 0x5f, 2,  op_iput_short },
     { "sget-object"       , 0x62, 4,  op_sget_object },
+    { "sput"              , 0x67, 4,  op_sput },
     { "invoke-virtual"    , 0x6e, 6,  op_invoke_virtual },
     { "invoke-direct"     , 0x70, 6,  op_invoke_direct },
     { "invoke-static"     , 0x71, 6,  op_invoke_static },
