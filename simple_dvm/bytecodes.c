@@ -380,6 +380,81 @@ class_obj *find_class_obj(simple_dalvik_vm *vm, char *name)
 //		return 4;
 //}
 
+/* This function sholud be called after obj->parent is initialized */
+static void fill_vtable(DexFileFormat *dex, class_obj *obj, class_data_item *class_data)
+{
+	int parent_vtable_size = (obj->parent == NULL) ? 0 : obj->parent->vtable_size;
+	int this_vmethods_size = class_data->virtual_methods_size;
+	vtable_item *parent_vtable = (obj->parent == NULL) ? NULL : obj->parent->vtable;
+	vtable_item **non_overridden_pvtable_entries = NULL;
+	int overridden_size = 0;
+	int non_overridden_size = 0;
+	int i = 0, j = 0;
+
+	if (is_verbose())
+		printf("Filling vtable for %s...\n", obj->name);
+
+	/* Step 1: Calculate the vtable size for this class 
+	 *         and record those parent vtable entries are not overridden by this class */
+	non_overridden_pvtable_entries = malloc(sizeof(vtable_item*) * parent_vtable_size);
+	for (i = 0; i < parent_vtable_size; i++)
+	{
+		int aggregated_idx = 0;
+		int tmp_overridden_size = overridden_size;
+
+		for (j = 0; j < this_vmethods_size; j++)
+		{
+			method_id_item *m;
+			char *this_method_name;
+			aggregated_idx += class_data->virtual_methods[j].method_idx_diff;
+			m = get_method_item(dex, aggregated_idx);
+			this_method_name = get_string_data(dex, m->name_idx);
+			if (strcmp(parent_vtable[i].name, this_method_name) == 0)
+				overridden_size++;
+		}
+		// If the vtable entry is not overridden
+		if (overridden_size == tmp_overridden_size)
+			non_overridden_pvtable_entries[non_overridden_size++] = &parent_vtable[i];
+	} 
+	obj->vtable_size = parent_vtable_size + this_vmethods_size - overridden_size; 
+	if (is_verbose())
+		printf("vtable_size: %d\n", obj->vtable_size);
+	obj->vtable = malloc(sizeof(vtable_item) * obj->vtable_size);
+
+	/* Step 2: Fill the vtable with this class' virtual methods */
+	int aggregated_idx = 0;
+	for (i = 0; i < this_vmethods_size; i++)
+	{
+		method_id_item *m;
+
+		aggregated_idx += class_data->virtual_methods[i].method_idx_diff;
+		m = get_method_item(dex, aggregated_idx);
+		strncpy(obj->vtable[i].name, get_string_data(dex, m->name_idx), sizeof(obj->vtable[i].name));
+		obj->vtable[i].method = &class_data->virtual_methods[i];
+		obj->vtable[i].method_id = aggregated_idx;
+		if (is_verbose())
+			printf("vtable[%d].name: %s\n"
+				   "vtable[%d].method_id: %d\n", 
+				   i, obj->vtable[i].name, i, obj->vtable[i].method_id);
+	}
+
+	/* Step 3: Fill the remaining vtable entries with non-overridden virtual methods from the parent class */
+	for (; i < obj->vtable_size; i++)
+	{
+		memcpy(&obj->vtable[i], non_overridden_pvtable_entries[i - this_vmethods_size], sizeof(vtable_item));
+		if (is_verbose())
+			printf("vtable[%d].name: %s\n"
+				   "vtable[%d].method_id: %d\n", 
+				   i, obj->vtable[i].name, i, obj->vtable[i].method_id);
+	}
+
+	if (non_overridden_pvtable_entries)
+		free(non_overridden_pvtable_entries);
+
+	if (is_verbose())
+		printf("done.\n");
+}
+
 class_obj *create_class_obj(simple_dalvik_vm *vm, DexFileFormat *dex, class_def_item *class_def, class_data_item *class_data)
 {
 	int i;
@@ -427,6 +502,7 @@ class_obj *create_class_obj(simple_dalvik_vm *vm, DexFileFormat *dex, class_def_
 	obj->fields = (obj_field *)((char *)obj + sizeof(class_obj));
 	obj->field_size = class_data->static_fields_size;
 	strcpy(obj->name, name);
+	fill_vtable(dex, obj, class_data);
 
 	for (i = 0; i < class_data->static_fields_size; i++)
 	{

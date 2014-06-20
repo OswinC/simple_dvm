@@ -250,6 +250,7 @@ typedef struct _obj_field {
 typedef struct _vtable_item {
 	char name[255];
 	encoded_method *method;
+	uint method_id;
 } vtable_item;
 
 typedef struct _class_obj {
@@ -288,6 +289,8 @@ void store_to_field(simple_dalvik_vm *vm, int val_id, int obj_id, char *field_na
 void store_to_field_wide(simple_dalvik_vm *vm, int val_id, int obj_id, char *field_name);
 
 void printInsFields(instance_obj *obj);
+void printVTable(class_obj *obj);
+
 void move_top_half_result_to_reg(simple_dalvik_vm *vm, int id);
 void move_bottom_half_result_to_reg(simple_dalvik_vm *vm, int id);
 void move_reg_to_top_half_result(simple_dalvik_vm *vm, int id);

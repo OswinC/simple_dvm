@@ -259,6 +259,22 @@ void printInsFields(instance_obj *obj)
     }
 }
 
+void printVTable(class_obj *obj)
+{
+    int i = 0;
+    if (is_verbose()) {
+		if (!obj)
+			return;
+		printf("Virtual table of %s:\n", obj->name);
+		for (i = 0; i < obj->vtable_size; i++)
+		{
+			printf("vtable[%d].name: %s\n"
+				   "vtable[%d].method_id: %d\n", 
+				   i, obj->vtable[i].name, i, obj->vtable[i].method_id);
+		}
+    }
+}
+
 int cmp_reg(simple_dalvik_vm *vm, int id1, int id2, CMP_TYPE cmp_type)
 {
 	int val1;
