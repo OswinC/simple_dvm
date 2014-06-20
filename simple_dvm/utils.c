@@ -349,12 +349,8 @@ void printVTable(class_obj *obj)
     }
 }
 
-int cmp_reg(simple_dalvik_vm *vm, int id1, int id2, CMP_TYPE cmp_type)
-{
-	int val1;
-	int val2;
-	load_reg_to(vm, id1, (unsigned char *) &val1);
-	load_reg_to(vm, id2, (unsigned char *) &val2);
+int cmp_val(int val1, int val2, CMP_TYPE cmp_type)
+{ 
 	switch (cmp_type)
 	{
 		case EQ:
@@ -385,4 +381,20 @@ int cmp_reg(simple_dalvik_vm *vm, int id1, int id2, CMP_TYPE cmp_type)
 			break;
 	}
 	return 1;
+}
+
+int cmp_reg(simple_dalvik_vm *vm, int id1, int id2, CMP_TYPE cmp_type)
+{
+	int val1;
+	int val2;
+	load_reg_to(vm, id1, (unsigned char *) &val1);
+	load_reg_to(vm, id2, (unsigned char *) &val2);
+	return cmp_val(val1, val2, cmp_type);
+}
+
+int cmp_reg_z(simple_dalvik_vm *vm, int id, CMP_TYPE cmp_type)
+{
+	int val;
+	load_reg_to(vm, id, (unsigned char *) &val);
+	return cmp_val(val, 0, cmp_type);
 }

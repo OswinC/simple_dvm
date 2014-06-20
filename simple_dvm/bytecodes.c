@@ -1042,6 +1042,138 @@ static int op_if_le(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
     return 0;
 }
 
+/* 0x38, if-eqz vAA, +BBBB
+ *
+ * Branch to the given destination if the given register's value compares with 0 as equal
+ *
+ * 3801 1234 - if-eqz v1, +0x3412
+ * Jump to pc + 0x3412 if v1 is equal to 0
+ */
+static int op_if_eqz(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int offset = 0;
+    reg_idx_vx = ptr[*pc + 1];
+    offset = (signed short) ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+    if (is_verbose())
+        printf("if-eqz v%d, +0x%04x\n", reg_idx_vx, offset);
+	if (cmp_reg_z(vm, reg_idx_vx, EQ) == 0)
+		*pc = *pc + offset * 2;
+	else
+		*pc = *pc + 4;
+    return 0;
+}
+
+/* 0x39, if-nez vAA, +BBBB
+ *
+ * Branch to the given destination if the given register's value compares with 0 as not equal
+ *
+ * 3901 1234 - if-nez v1, +0x3412
+ * Jump to pc + 0x3412 if v1 is not equal to 0
+ */
+static int op_if_nez(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int offset = 0;
+    reg_idx_vx = ptr[*pc + 1];
+    offset = (signed short) ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+    if (is_verbose())
+        printf("if-nez v%d, +0x%04x\n", reg_idx_vx, offset);
+	if (cmp_reg_z(vm, reg_idx_vx, NE) == 0)
+		*pc = *pc + offset * 2;
+	else
+		*pc = *pc + 4;
+    return 0;
+}
+
+/* 0x3a, if-ltz vAA, +BBBB
+ *
+ * Branch to the given destination if the given register's value compares with 0 as less than
+ *
+ * 3a01 1234 - if-ltz v1, +0x3412
+ * Jump to pc + 0x3412 if v1 is less than 0
+ */
+static int op_if_ltz(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int offset = 0;
+    reg_idx_vx = ptr[*pc + 1];
+    offset = (signed short) ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+    if (is_verbose())
+        printf("if-ltz v%d, +0x%04x\n", reg_idx_vx, offset);
+	if (cmp_reg_z(vm, reg_idx_vx, LT) == 0)
+		*pc = *pc + offset * 2;
+	else
+		*pc = *pc + 4;
+    return 0;
+}
+
+/* 0x3b, if-gez vAA, +BBBB
+ *
+ * Branch to the given destination if the given register's value compares with 0 as greater or equal
+ *
+ * 3b01 1234 - if-gez v1, +0x3412
+ * Jump to pc + 0x3412 if v1 is greater than or equal to 0
+ */
+static int op_if_gez(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int offset = 0;
+    reg_idx_vx = ptr[*pc + 1];
+    offset = (signed short) ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+    if (is_verbose())
+        printf("if-gez v%d, +0x%04x\n", reg_idx_vx, offset);
+	if (cmp_reg_z(vm, reg_idx_vx, GE) == 0)
+		*pc = *pc + offset * 2;
+	else
+		*pc = *pc + 4;
+    return 0;
+}
+
+/* 0x3c, if-gtz vAA, +BBBB
+ *
+ * Branch to the given destination if the given register's value compares with 0 as greater than
+ *
+ * 3c01 1234 - if-gtz v1, +0x3412
+ * Jump to pc + 0x3412 if v1 is greater than 0
+ */
+static int op_if_gtz(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int offset = 0;
+    reg_idx_vx = ptr[*pc + 1];
+    offset = (signed short) ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+    if (is_verbose())
+        printf("if-gtz v%d, +0x%04x\n", reg_idx_vx, offset);
+	if (cmp_reg_z(vm, reg_idx_vx, GT) == 0)
+		*pc = *pc + offset * 2;
+	else
+		*pc = *pc + 4;
+    return 0;
+}
+
+/* 0x3d, if-lez vAA, +BBBB
+ *
+ * Branch to the given destination if the given register's value compares with 0 as less or equal
+ *
+ * 3d01 1234 - if-lez v1, +0x3412
+ * Jump to pc + 0x3412 if v1 is less than or equal to 0
+ */
+static int op_if_lez(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int offset = 0;
+    reg_idx_vx = ptr[*pc + 1];
+    offset = (signed short) ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+    if (is_verbose())
+        printf("if-lez v%d, +0x%04x\n", reg_idx_vx, offset);
+	if (cmp_reg_z(vm, reg_idx_vx, LE) == 0)
+		*pc = *pc + offset * 2;
+	else
+		*pc = *pc + 4;
+    return 0;
+}
+
 /* 35c format
  * A|G|op BBBB F|E|D|C
  * [A=5] op {vC, vD, vE, vF, vG}, meth@BBBB
@@ -2126,6 +2258,12 @@ static byteCode byteCodes[] = {
     { "if-ge"			  , 0x35, 4,  op_if_ge },
     { "if-gt"			  , 0x36, 4,  op_if_gt },
     { "if-le"			  , 0x37, 4,  op_if_le },
+    { "if-eqz"			  , 0x38, 4,  op_if_eqz },
+    { "if-nez"			  , 0x39, 4,  op_if_nez },
+    { "if-ltz"			  , 0x3a, 4,  op_if_ltz },
+    { "if-gez"			  , 0x3b, 4,  op_if_gez },
+    { "if-gtz"			  , 0x3c, 4,  op_if_gtz },
+    { "if-lez"			  , 0x3d, 4,  op_if_lez },
     { "aput-object"       , 0x4d, 4,  op_aput_object },
     { "iget"              , 0x52, 2,  op_iget },
     { "iget-wide"         , 0x53, 2,  op_iget_wide },
