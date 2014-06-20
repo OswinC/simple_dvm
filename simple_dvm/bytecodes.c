@@ -1469,6 +1469,70 @@ out:
 }
 
 /*
+ * 21c family sput operation for 4-byte long data
+ */
+static int op_utils_sput(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int field_id = 0;
+    int reg_idx_va = 0;
+    int reg_idx_vb = 0;
+    int i;
+    char *class_name, *field_name;
+    obj_field *found = NULL;
+
+    reg_idx_va = ptr[*pc + 1] & 0xf;
+    reg_idx_vb = (ptr[*pc + 1] >> 4) & 0xf;
+    field_id = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+
+    class_name = get_field_class_name(dex, field_id);
+    field_name = get_field_item_name(dex, field_id);
+
+    if (is_verbose()) {
+        printf("op_utils_sput v%d, field 0x%04x (%s.%s)\n", reg_idx_va, field_id, class_name, field_name);
+    }
+
+//	instance_obj *obj;
+ //   load_reg_to(vm, reg_idx_vb, (unsigned char *) &obj);
+//	printInsFields(obj);
+    store_to_static_field(vm, reg_idx_va, class_name, field_name);
+//	printInsFields(obj);
+
+    return 0;
+}
+
+/*
+ * 21c family sput operation for 4-byte long data
+ */
+static int op_utils_sput_wide(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int field_id = 0;
+    int reg_idx_va = 0;
+    int reg_idx_vb = 0;
+    int i;
+    char *class_name, *field_name;
+    obj_field *found = NULL;
+
+    reg_idx_va = ptr[*pc + 1] & 0xf;
+    reg_idx_vb = (ptr[*pc + 1] >> 4) & 0xf;
+    field_id = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+
+    class_name = get_field_class_name(dex, field_id);
+    field_name = get_field_item_name(dex, field_id);
+
+    if (is_verbose()) {
+        printf("op_utils_sput v%d, field 0x%04x (%s.%s)\n", reg_idx_va, field_id, class_name, field_name);
+    }
+
+//	instance_obj *obj;
+ //   load_reg_to(vm, reg_idx_vb, (unsigned char *) &obj);
+//	printInsFields(obj);
+    store_to_static_field_wide(vm, reg_idx_va, class_name, field_name);
+//	printInsFields(obj);
+
+    return 0;
+}
+
+/*
  * 22c family iput operation for 4-byte long data
  */
 static int op_utils_iput(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)

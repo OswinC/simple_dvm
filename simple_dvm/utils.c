@@ -188,6 +188,80 @@ void load_field_to_wide(simple_dalvik_vm *vm, int val_id, int obj_id, char *fiel
     store_double_to_reg(vm, val_id + 1, ptr);
 }
 
+class_obj *find_class_obj(simple_dalvik_vm *vm, char *name);
+/*
+ * Store the value in register "val_id" to "field_name" of the class object
+ */
+void store_to_static_field(simple_dalvik_vm *vm, int val_id, char *class_name, char *field_name)
+{
+	class_obj *obj;
+	int i;
+	obj_field *field = NULL;
+	unsigned char *ptr = NULL;
+
+	obj = find_class_obj(vm, class_name);
+	if (!obj)
+	{
+		printf("[%s] No class obj found: %s\n", class_name);
+		return;
+	}
+
+	for (i = 0; i < obj->field_size; i++)
+	{
+		if (!strncmp(field_name, obj->fields[i].name, strlen(field_name)))
+		{
+			field = &obj->fields[i];
+			break;
+		}
+	}
+
+	if (!field)
+	{
+		printf("[%s]: no field found: %s\n", __FUNCTION__, field_name);
+		return;
+	}
+
+	ptr = (unsigned char *) &field->data;
+	load_reg_to(vm, val_id, ptr);
+}
+
+/*
+ * Store the wide value in register pair of "val_id" & "val_id+1" to "field_name" of the class object
+ */
+void store_to_static_field_wide(simple_dalvik_vm *vm, int val_id, char *class_name, char *field_name)
+{
+	class_obj *obj;
+	int i;
+	obj_field *field = NULL;
+	unsigned char *ptr = NULL;
+
+	obj = find_class_obj(vm, class_name);
+	if (!obj)
+	{
+		printf("[%s] No class obj found: %s\n", class_name);
+		return;
+	}
+
+	for (i = 0; i < obj->field_size; i++)
+	{
+		if (!strncmp(field_name, obj->fields[i].name, strlen(field_name)))
+		{
+			field = &obj->fields[i];
+			break;
+		}
+	}
+
+	if (!field)
+	{
+		printf("[%s]: no field found: %s\n", __FUNCTION__, field_name);
+		return;
+	}
+
+	ptr = (unsigned char *) &field->data;
+	load_reg_to_double(vm, val_id, ptr + 4);
+	load_reg_to_double(vm, val_id + 1, ptr);
+}
+
 /*
  * Store the value in register "val_id" to "field_name" of the object pointed by
  * register "obj_id"
