@@ -477,7 +477,8 @@ class_obj *create_class_obj(simple_dalvik_vm *vm, DexFileFormat *dex, class_def_
 	parent_class_def = find_class_def(dex, parent_type_id);
 	parent_class_data = find_class_data(dex, parent_type_id);
 
-	printf("parent: %s\n", parent_name);
+	if (is_verbose())
+		printf("parent: %s\n", parent_name);
 	if (strcmp(parent_name, "Ljava/lang/Object;"))
 	{
 		parent = create_class_obj(vm, dex, parent_class_def, parent_class_data);
@@ -486,7 +487,8 @@ class_obj *create_class_obj(simple_dalvik_vm *vm, DexFileFormat *dex, class_def_
 	}
 	else
 	{
-		printf("Reach the Object\n");
+		if (is_verbose())
+			printf("Reach the Object\n");
 		parent = NULL;
 	}
 
@@ -1107,10 +1109,14 @@ static int invoke_method(char *name, DexFileFormat *dex, simple_dalvik_vm *vm,
 
 	if (!method)
 	{
-		type_id_item *item = get_type_item(dex, m->class_idx);
-		printf("%s: no method found: %s.%s\n", __FUNCTION__,
-				get_string_data(dex, item->descriptor_idx),
-				get_string_data(dex, m->name_idx));
+		char *class_name = get_type_item_name(dex, m->class_idx);
+
+		if (strcmp("Ljava/lang/Object;", class_name))
+		{
+			printf("%s: no method found: %s.%s\n", __FUNCTION__,
+					class_name, get_string_data(dex, m->name_idx));
+		}
+
 		return 0;
 	}
 
