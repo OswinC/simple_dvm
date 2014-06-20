@@ -2187,7 +2187,7 @@ encoded_method *find_vmethod(DexFileFormat *dex, instance_obj *ins_obj, int clas
 
 	for (i = 0; i < vtable_size; i++)
 	{
-		if (!strncpy(vtable[i].name, name, strlen(name)))
+		if (!strcmp(vtable[i].name, name))
 		{
 			found = vtable[i].method;
 			break;
