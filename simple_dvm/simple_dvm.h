@@ -281,6 +281,8 @@ void load_reg_to_double(simple_dalvik_vm *vm, int id, unsigned char *ptr);
 void load_result_to_double(simple_dalvik_vm *vm, unsigned char *ptr);
 void load_field_to(simple_dalvik_vm *vm, int val_id, int obj_id, char *field_name);
 void load_field_to_wide(simple_dalvik_vm *vm, int val_id, int obj_id, char *field_name);
+void load_static_field_to(simple_dalvik_vm *vm, int val_id, char *class_name, char *field_name);
+void load_static_field_to_wide(simple_dalvik_vm *vm, int val_id, char *class_name, char *field_name);
 
 void store_to_reg(simple_dalvik_vm *vm, int id, unsigned char *ptr);
 void store_double_to_reg(simple_dalvik_vm *vm, int id, unsigned char *ptr);
