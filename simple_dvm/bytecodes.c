@@ -1844,21 +1844,6 @@ out:
     return 0;
 }
 
-/* 0x67 sput vx,field_id
- * Store vx to the object reference field identified by the field_id.
- * 6701 0C00 - sput v1, Test3.os1:Ljava/lang/Object; // field@000c
- * Store v1 to field@000c (entry #CH in the field id table).
- */
-static int op_sput(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
-{
-	op_utils_sput(dex, vm, ptr, pc);
-
-out:
-    /* TODO */
-    *pc = *pc + 4;
-    return 0;
-}
-
 /* 0x62 sget-object vx,field_id
  * Reads the object reference field identified by the field_id into vx.
  * 6201 0C00 - sget-object v1, Test3.os1:Ljava/lang/Object; // field@000c
@@ -1875,6 +1860,111 @@ static int op_sget_object(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int
         printf("sget-object v%d, field 0x%04x\n", reg_idx_vx, field_id);
     }
     store_to_reg(vm, reg_idx_vx, (unsigned char *) &field_id);
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0x67 sput vx,field_id
+ * Store vx to the object reference field identified by the field_id.
+ * 6701 0C00 - sput v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Store v1 to field@000c (entry #CH in the field id table).
+ */
+static int op_sput(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_sput(dex, vm, ptr, pc);
+
+out:
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0x68 sput-wide vx,field_id
+ * Store vx & vx +1 to the object reference field identified by the field_id.
+ * 6701 0C00 - sput v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Store v1 & v2 to field@000c (entry #CH in the field id table).
+ */
+static int op_sput_wide(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_sput_wide(dex, vm, ptr, pc);
+
+out:
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0x69 sput-object vx,field_id
+ * Store vx to the object reference field identified by the field_id.
+ * 6701 0C00 - sput v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Store v1 to field@000c (entry #CH in the field id table).
+ */
+static int op_sput_object(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_sput(dex, vm, ptr, pc);
+
+out:
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0x6a sput-boolean vx,field_id
+ * Store vx to the object reference field identified by the field_id.
+ * 6701 0C00 - sput v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Store v1 to field@000c (entry #CH in the field id table).
+ */
+static int op_sput_boolean(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_sput(dex, vm, ptr, pc);
+
+out:
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0x6b sput-byte vx,field_id
+ * Store vx to the object reference field identified by the field_id.
+ * 6701 0C00 - sput v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Store v1 to field@000c (entry #CH in the field id table).
+ */
+static int op_sput_byte(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_sput(dex, vm, ptr, pc);
+
+out:
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0x6c sput-char vx,field_id
+ * Store vx to the object reference field identified by the field_id.
+ * 6701 0C00 - sput v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Store v1 to field@000c (entry #CH in the field id table).
+ */
+static int op_sput_char(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_sput(dex, vm, ptr, pc);
+
+out:
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0x6d sput-short vx,field_id
+ * Store vx to the object reference field identified by the field_id.
+ * 6701 0C00 - sput v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Store v1 to field@000c (entry #CH in the field id table).
+ */
+static int op_sput_short(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_sput(dex, vm, ptr, pc);
+
+out:
     /* TODO */
     *pc = *pc + 4;
     return 0;
@@ -2320,6 +2410,12 @@ static byteCode byteCodes[] = {
     { "iput-short"        , 0x5f, 2,  op_iput_short },
     { "sget-object"       , 0x62, 4,  op_sget_object },
     { "sput"              , 0x67, 4,  op_sput },
+    { "sput-wide"         , 0x68, 4,  op_sput_wide },
+    { "sput-object"       , 0x69, 4,  op_sput_object },
+    { "sput-boolean"      , 0x6a, 4,  op_sput_boolean },
+    { "sput-byte"         , 0x6b, 4,  op_sput_byte },
+    { "sput-char"         , 0x6c, 4,  op_sput_char },
+    { "sput-short"        , 0x6d, 4,  op_sput_short },
     { "invoke-virtual"    , 0x6e, 6,  op_invoke_virtual },
     { "invoke-direct"     , 0x70, 6,  op_invoke_direct },
     { "invoke-static"     , 0x71, 6,  op_invoke_static },
