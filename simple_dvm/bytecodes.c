@@ -1629,6 +1629,9 @@ static int op_utils_sget(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int 
         printf("op_utils_sget v%d, field 0x%04x (%s.%s)\n", reg_idx_va, field_id, class_name, field_name);
     }
 
+    if (strcmp(class_name, "Ljava/lang/System;") == 0)
+	    return 0;
+
     if (is_verbose())
     {
 	    class_obj *obj;
