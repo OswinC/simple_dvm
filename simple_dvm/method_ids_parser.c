@@ -29,6 +29,39 @@ void parse_method_ids(DexFileFormat *dex, unsigned char *buf, int offset)
     }
 }
 
+method_id_item *get_method_item_by_name(DexFileFormat *dex, int class_idx, const char *name)
+{
+	int i, j;
+	method_id_item *found = NULL;
+
+	for (i = 0; i < dex->header.classDefsSize; i++)
+	{
+		if (dex->class_def_item[i].class_idx == class_idx)
+		{
+			class_data_item *item = &dex->class_data_item[i];
+			int methods_size = item->direct_methods_size;
+			int aggregated_idx = 0;
+
+			for (j = 0; j < methods_size; j++)
+			{
+				encoded_method *tmp = &item->direct_methods[j];
+				aggregated_idx += tmp->method_idx_diff;
+				method_id_item *item = &dex->method_id_item[aggregated_idx]; 
+				if (strcmp(get_string_data(dex, item->name_idx), name) == 0) 
+				{
+					found = item;
+					break;
+				}
+			}
+
+			if (found)
+				break;
+		}
+	}
+
+	return found;
+}
+
 method_id_item *get_method_item(DexFileFormat *dex, int method_id)
 {
     if (method_id >= 0 && method_id < dex->header.methodIdsSize)

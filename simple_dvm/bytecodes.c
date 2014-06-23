@@ -9,7 +9,9 @@
 #include "java_lib.h"
 
 encoded_method *find_method(DexFileFormat *dex, int class_idx, int method_name_idx);
+encoded_method *find_method_by_name(DexFileFormat *dex, int class_idx, const char *name);
 encoded_method *find_vmethod(DexFileFormat *dex, instance_obj *ins_obj, int class_idx, int method_name_idx);
+static int invoke_method(char *name, DexFileFormat *dex, simple_dalvik_vm *vm, method_id_item *m, invoke_parameters *p);
 int new_invoke_frame(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m);
 void stack_push(simple_dalvik_vm *vm, u4 data);
 u4 stack_pop(simple_dalvik_vm *vm);
@@ -466,6 +468,7 @@ class_obj *create_class_obj(simple_dalvik_vm *vm, DexFileFormat *dex, class_def_
 	class_data_item *parent_class_data;
 	int parent_type_id;
 	char *parent_name;
+	method_id_item *method;
 
 	name = get_type_item_name(dex, class_def->class_idx);
 	obj = find_class_obj(vm, name);
@@ -523,6 +526,11 @@ class_obj *create_class_obj(simple_dalvik_vm *vm, DexFileFormat *dex, class_def_
 	}
 	// TODO: wrap it to another class_*-series function?
 	hash_add(&vm->root_set, &obj->class_list, hash(obj->name));
+
+	// If there is a <clinit>, call it to initialize static fields 
+	method = get_method_item_by_name(dex, class_def->class_idx, "<clinit>");
+	if (method)
+		invoke_method("invoke-direct", dex, vm, method, &vm->p);
 
 	return obj;
 }
@@ -2728,6 +2736,39 @@ encoded_method *find_vmethod(DexFileFormat *dex, instance_obj *ins_obj, int clas
 		}
 	}
 	*/
+
+	return found;
+}
+
+encoded_method *find_method_by_name(DexFileFormat *dex, int class_idx, const char *name)
+{
+	int i, j;
+	encoded_method *found = NULL;
+
+	for (i = 0; i < dex->header.classDefsSize; i++)
+	{
+		if (dex->class_def_item[i].class_idx == class_idx)
+		{
+			class_data_item *item = &dex->class_data_item[i];
+			int methods_size = item->direct_methods_size;
+			int aggregated_idx = 0;
+
+			for (j = 0; j < methods_size; j++)
+			{
+				encoded_method *tmp = &item->direct_methods[j];
+				aggregated_idx += tmp->method_idx_diff;
+				method_id_item *item = &dex->method_id_item[aggregated_idx]; 
+				if (strcmp(get_string_data(dex, item->name_idx), name) == 0) 
+				{
+					found = tmp;
+					break;
+				}
+			}
+
+			if (found)
+				break;
+		}
+	}
 
 	return found;
 }

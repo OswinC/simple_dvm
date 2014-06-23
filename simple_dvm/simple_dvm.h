@@ -202,6 +202,7 @@ char *gen_full_field_name(char *dest, char *class_name, char *field_name);
 /* method ids parser */
 void parse_method_ids(DexFileFormat *dex, unsigned char *buf, int offset);
 method_id_item *get_method_item(DexFileFormat *dex, int method_id);
+method_id_item *get_method_item_by_name(DexFileFormat *dex, int class_idx, const char *name);
 
 /* class defs parser */
 void parse_class_defs(DexFileFormat *dex, unsigned char *buf, int offset);
