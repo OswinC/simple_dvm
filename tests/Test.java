@@ -16,6 +16,7 @@ class PTest
 class Test extends PTest
 {
 	int test = 0;
+	static int testa = 0;
 
 	public Test(int a)
 	{
@@ -39,6 +40,7 @@ class Test extends PTest
 		int b;
 
 		a.doTest(4);
+		Test.testa = 1;
 //		b = a.getTest();
 //		System.out.println("hello " + b);
 
