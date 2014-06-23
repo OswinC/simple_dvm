@@ -1924,6 +1924,34 @@ out:
     return 0;
 }
 
+/* 0x60 sget vx,field_id
+ * Reads the object reference field identified by the field_id into vx.
+ * 6001 0C00 - sget v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Reads field@000c (entry #CH in the field id table) into v1.
+ */
+static int op_sget(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_sget(dex, vm, ptr, pc);
+
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0x61 sget-wide vx,field_id
+ * Reads the object reference field identified by the field_id into vx & vx + 1.
+ * 6101 0C00 - sget-wide v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Reads field@000c (entry #CH in the field id table) into v1 & v2.
+ */
+static int op_sget_wide(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_sget_wide(dex, vm, ptr, pc);
+
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
 /* 0x62 sget-object vx,field_id
  * Reads the object reference field identified by the field_id into vx.
  * 6201 0C00 - sget-object v1, Test3.os1:Ljava/lang/Object; // field@000c
@@ -1931,15 +1959,64 @@ out:
  */
 static int op_sget_object(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
 {
-    int field_id = 0;
-    int reg_idx_vx = 0;
-    reg_idx_vx = ptr[*pc + 1];
-    field_id = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+	op_utils_sget(dex, vm, ptr, pc);
 
-    if (is_verbose()) {
-        printf("sget-object v%d, field 0x%04x\n", reg_idx_vx, field_id);
-    }
-    store_to_reg(vm, reg_idx_vx, (unsigned char *) &field_id);
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0x63 sget-boolean vx,field_id
+ * Reads the object reference field identified by the field_id into vx.
+ * 6301 0C00 - sget-boolean v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Reads field@000c (entry #CH in the field id table) into v1.
+ */
+static int op_sget_boolean(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_sget(dex, vm, ptr, pc);
+
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0x64 sget-byte vx,field_id
+ * Reads the object reference field identified by the field_id into vx.
+ * 6401 0C00 - sget-byte v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Reads field@000c (entry #CH in the field id table) into v1.
+ */
+static int op_sget_byte(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_sget(dex, vm, ptr, pc);
+
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0x65 sget-char vx,field_id
+ * Reads the object reference field identified by the field_id into vx.
+ * 6501 0C00 - sget-char v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Reads field@000c (entry #CH in the field id table) into v1.
+ */
+static int op_sget_char(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_sget(dex, vm, ptr, pc);
+
+    /* TODO */
+    *pc = *pc + 4;
+    return 0;
+}
+
+/* 0x66 sget-short vx,field_id
+ * Reads the object reference field identified by the field_id into vx.
+ * 6601 0C00 - sget-short v1, Test3.os1:Ljava/lang/Object; // field@000c
+ * Reads field@000c (entry #CH in the field id table) into v1.
+ */
+static int op_sget_short(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	op_utils_sget(dex, vm, ptr, pc);
+
     /* TODO */
     *pc = *pc + 4;
     return 0;
@@ -2488,7 +2565,13 @@ static byteCode byteCodes[] = {
     { "iput-byte"         , 0x5d, 2,  op_iput_byte },
     { "iput-char"         , 0x5e, 2,  op_iput_char },
     { "iput-short"        , 0x5f, 2,  op_iput_short },
+    { "sget"              , 0x60, 4,  op_sget },
+    { "sget-wide"         , 0x61, 4,  op_sget_wide },
     { "sget-object"       , 0x62, 4,  op_sget_object },
+    { "sget-boolean"      , 0x63, 4,  op_sget_boolean },
+    { "sget-byte"         , 0x64, 4,  op_sget_byte },
+    { "sget-char"         , 0x65, 4,  op_sget_char },
+    { "sget-short"        , 0x66, 4,  op_sget_short },
     { "sput"              , 0x67, 4,  op_sput },
     { "sput-wide"         , 0x68, 4,  op_sput_wide },
     { "sput-object"       , 0x69, 4,  op_sput_object },
