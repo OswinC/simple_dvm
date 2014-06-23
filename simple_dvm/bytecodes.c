@@ -1611,7 +1611,7 @@ static int op_utils_sget(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int 
     char *class_name, *field_name;
     obj_field *found = NULL;
 
-    reg_idx_va = ptr[*pc + 1] & 0xff;
+    reg_idx_va = ptr[*pc + 1];
     field_id = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
 
     class_name = get_field_class_name(dex, field_id);
@@ -1653,7 +1653,7 @@ static int op_utils_sget_wide(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr,
     char *class_name, *field_name;
     obj_field *found = NULL;
 
-    reg_idx_va = ptr[*pc + 1] & 0xff;
+    reg_idx_va = ptr[*pc + 1];
     field_id = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
 
     class_name = get_field_class_name(dex, field_id);
@@ -1695,7 +1695,7 @@ static int op_utils_sput(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int 
     char *class_name, *field_name;
     obj_field *found = NULL;
 
-    reg_idx_va = ptr[*pc + 1] & 0xff;
+    reg_idx_va = ptr[*pc + 1];
     field_id = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
 
     class_name = get_field_class_name(dex, field_id);
@@ -1733,13 +1733,11 @@ static int op_utils_sput_wide(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr,
 {
     int field_id = 0;
     int reg_idx_va = 0;
-    int reg_idx_vb = 0;
     int i;
     char *class_name, *field_name;
     obj_field *found = NULL;
 
-    reg_idx_va = ptr[*pc + 1] & 0xf;
-    reg_idx_vb = (ptr[*pc + 1] >> 4) & 0xf;
+    reg_idx_va = ptr[*pc + 1];
     field_id = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
 
     class_name = get_field_class_name(dex, field_id);
