@@ -483,3 +483,14 @@ int cmp_reg_z(simple_dalvik_vm *vm, int id, CMP_TYPE cmp_type)
 	load_reg_to(vm, id, (unsigned char *) &val);
 	return cmp_val(val, 0, cmp_type);
 }
+
+void dump_array(instance_obj *array)
+{
+	int i;
+	array_obj *arr_obj = (array_obj *)array->priv_data;
+
+	printf("array class: %s\n", array->cls->name);
+	for (i = 0; i < arr_obj->size; i++)
+		printf("[%d]: 0x%x\n", i, arr_obj->ptr[i]);
+}
+

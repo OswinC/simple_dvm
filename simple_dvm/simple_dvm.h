@@ -296,6 +296,7 @@ void store_to_static_field_wide(simple_dalvik_vm *vm, int val_id, char *class_na
 void printInsFields(instance_obj *obj);
 void printStaticFields(class_obj *cls);
 void printVTable(class_obj *obj);
+void dump_array(instance_obj *array);
 
 void move_top_half_result_to_reg(simple_dalvik_vm *vm, int id);
 void move_bottom_half_result_to_reg(simple_dalvik_vm *vm, int id);

@@ -695,31 +695,27 @@ static instance_obj *new_array(simple_dalvik_vm *vm, DexFileFormat *dex, int typ
 	return ins_obj;
 }
 
-/* 0x4d aput-object va, vb, vc
- * Store an object reference pointed by va in the element of an array pointed by vb,
- * which is indexed by vc
- * 4d02 0100 - aput-object v2, v1, v0
- */
-static int op_aput_object(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+static int op_utils_aput(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc, char *op_name)
 {
 	int reg_idx_va = 0;
 	int reg_idx_vb = 0;
 	int reg_idx_vc = 0;
 	int size;
 	int idx;
-	instance_obj *ins_obj, *arr_ins_obj;
+	instance_obj *arr_ins_obj;
 	array_obj *arr_obj;
+	unsigned int data;
 
 	reg_idx_va = ptr[*pc + 1];
 	reg_idx_vb = ptr[*pc + 2];
 	reg_idx_vc = ptr[*pc + 3];
 
 	if (is_verbose()) {
-		printf("aput-object v%d, v%d, v%d", reg_idx_va, reg_idx_vb, reg_idx_vc);
+		printf("%s v%d, v%d, v%d", op_name, reg_idx_va, reg_idx_vb, reg_idx_vc);
 		printf("\n");
 	}
 
-	load_reg_to(vm, reg_idx_va, (unsigned char *)&ins_obj);
+	load_reg_to(vm, reg_idx_va, (unsigned char *)&data);
 	load_reg_to(vm, reg_idx_vb, (unsigned char *)&arr_ins_obj);
 	load_reg_to(vm, reg_idx_vc, (unsigned char *)&idx);
 
@@ -731,10 +727,23 @@ static int op_aput_object(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int
 		return -1;
 	}
 
-	arr_obj->ptr[idx] = ins_obj;
+	arr_obj->ptr[idx] = (void *)data;
+
+	if (is_verbose())
+		dump_array(arr_ins_obj);
 
 	*pc = *pc + 4;
 	return 0;
+}
+
+/* 0x4d aput-object va, vb, vc
+ * Store an object reference pointed by va in the element of an array pointed by vb,
+ * which is indexed by vc
+ * 4d02 0100 - aput-object v2, v1, v0
+ */
+static int op_aput_object(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	return op_utils_aput(dex, vm, ptr, pc, "aput-object");
 }
 
 /* 0x23 new-array va, vb, type
