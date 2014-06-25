@@ -736,6 +736,50 @@ static int op_utils_aput(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int 
 	return 0;
 }
 
+static int op_utils_aput_wide(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc, char *op_name)
+{
+	int reg_idx_va = 0;
+	int reg_idx_vb = 0;
+	int reg_idx_vc = 0;
+	int size;
+	int idx;
+	instance_obj *arr_ins_obj;
+	array_obj *arr_obj;
+	unsigned int data[2];
+
+	reg_idx_va = ptr[*pc + 1];
+	reg_idx_vb = ptr[*pc + 2];
+	reg_idx_vc = ptr[*pc + 3];
+
+	if (is_verbose()) {
+		printf("%s v%d, v%d, v%d", op_name, reg_idx_va, reg_idx_vb, reg_idx_vc);
+		printf("\n");
+	}
+
+	load_reg_to(vm, reg_idx_va, (unsigned char *)&data[0]);
+	load_reg_to(vm, reg_idx_va + 1, (unsigned char *)&data[1]);
+	load_reg_to(vm, reg_idx_vb, (unsigned char *)&arr_ins_obj);
+	load_reg_to(vm, reg_idx_vc, (unsigned char *)&idx);
+
+	arr_obj = (array_obj *)arr_ins_obj->priv_data;
+	idx *= 2;
+	if (idx >= arr_obj->size)
+	{
+		printf("[%s] Out of boundary in array %s: size: %d, idx: %d\n", __FUNCTION__,
+			arr_ins_obj->cls->name, arr_obj->size, idx);
+		return -1;
+	}
+
+	arr_obj->ptr[idx] = (void *)data[0];
+	arr_obj->ptr[idx + 1] = (void *)data[1];
+
+	if (is_verbose())
+		dump_array(arr_ins_obj);
+
+	*pc = *pc + 4;
+	return 0;
+}
+
 /* 0x4d aput-object va, vb, vc
  * Store an object reference pointed by va in the element of an array pointed by vb,
  * which is indexed by vc
