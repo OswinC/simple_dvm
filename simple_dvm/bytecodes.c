@@ -2371,6 +2371,38 @@ static int op_div_int(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc
 
 }
 
+/* 0x83 int-to-double vx, vy
+ * Converts the int value in vy into an double value in vx,vx+1.
+ * 8340  - int-to-double v0, v4
+ * Converts the int value in v4 into an double value in v0,v1.
+ */
+static int op_int_to_double(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int reg_idx_vy = 0;
+    int reg_idx_vz = 0;
+    double d = 0;
+    unsigned char *ptr_d = (unsigned char *) &d;
+    int i = 0;
+    int i2 = 0 ;
+    reg_idx_vx = ptr[*pc + 1] & 0x0F;
+    reg_idx_vz = reg_idx_vx + 1;
+    reg_idx_vy = (ptr[*pc + 1] >> 4) & 0x0F;
+
+    load_reg_to(vm, reg_idx_vy, (unsigned char *) &i);
+
+    d = (double)i;
+    if (is_verbose()) {
+        printf("int-to-double v%d, v%d\n", reg_idx_vx, reg_idx_vy);
+        printf("(%d) to (%f) \n", i , d);
+    }
+
+    store_double_to_reg(vm, reg_idx_vx , ptr_d + 4);
+    store_double_to_reg(vm, reg_idx_vz , ptr_d);
+    *pc = *pc + 2;
+    return 0;
+}
+
 /* 0x8A double-to-int vx, vy
  * Converts the double value in vy,vy+1 into an integer value in vx.
  * 8A40  - double-to-int v0, v4
@@ -2722,6 +2754,7 @@ static byteCode byteCodes[] = {
     { "invoke-virtual"    , 0x6e, 6,  op_invoke_virtual },
     { "invoke-direct"     , 0x70, 6,  op_invoke_direct },
     { "invoke-static"     , 0x71, 6,  op_invoke_static },
+    { "int-to-double"     , 0x83, 2,  op_int_to_double},
     { "double-to-int"     , 0x8a, 2,  op_double_to_int},
     { "add-int"           , 0x90, 4,  op_add_int },
     { "sub-int"           , 0x91, 4,  op_sub_int },
