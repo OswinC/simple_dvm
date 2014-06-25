@@ -695,101 +695,6 @@ static instance_obj *new_array(simple_dalvik_vm *vm, DexFileFormat *dex, int typ
 	return ins_obj;
 }
 
-static int op_utils_aput(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc, char *op_name)
-{
-	int reg_idx_va = 0;
-	int reg_idx_vb = 0;
-	int reg_idx_vc = 0;
-	int size;
-	int idx;
-	instance_obj *arr_ins_obj;
-	array_obj *arr_obj;
-	unsigned int data;
-
-	reg_idx_va = ptr[*pc + 1];
-	reg_idx_vb = ptr[*pc + 2];
-	reg_idx_vc = ptr[*pc + 3];
-
-	if (is_verbose()) {
-		printf("%s v%d, v%d, v%d", op_name, reg_idx_va, reg_idx_vb, reg_idx_vc);
-		printf("\n");
-	}
-
-	load_reg_to(vm, reg_idx_va, (unsigned char *)&data);
-	load_reg_to(vm, reg_idx_vb, (unsigned char *)&arr_ins_obj);
-	load_reg_to(vm, reg_idx_vc, (unsigned char *)&idx);
-
-	arr_obj = (array_obj *)arr_ins_obj->priv_data;
-	if (idx >= arr_obj->size)
-	{
-		printf("[%s] Out of boundary in array %s: size: %d, idx: %d\n", __FUNCTION__,
-			arr_ins_obj->cls->name, arr_obj->size, idx);
-		return -1;
-	}
-
-	arr_obj->ptr[idx] = (void *)data;
-
-	if (is_verbose())
-		dump_array(arr_ins_obj);
-
-	*pc = *pc + 4;
-	return 0;
-}
-
-static int op_utils_aput_wide(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc, char *op_name)
-{
-	int reg_idx_va = 0;
-	int reg_idx_vb = 0;
-	int reg_idx_vc = 0;
-	int size;
-	int idx;
-	instance_obj *arr_ins_obj;
-	array_obj *arr_obj;
-	unsigned int data[2];
-
-	reg_idx_va = ptr[*pc + 1];
-	reg_idx_vb = ptr[*pc + 2];
-	reg_idx_vc = ptr[*pc + 3];
-
-	if (is_verbose()) {
-		printf("%s v%d, v%d, v%d", op_name, reg_idx_va, reg_idx_vb, reg_idx_vc);
-		printf("\n");
-	}
-
-	load_reg_to(vm, reg_idx_va, (unsigned char *)&data[0]);
-	load_reg_to(vm, reg_idx_va + 1, (unsigned char *)&data[1]);
-	load_reg_to(vm, reg_idx_vb, (unsigned char *)&arr_ins_obj);
-	load_reg_to(vm, reg_idx_vc, (unsigned char *)&idx);
-
-	arr_obj = (array_obj *)arr_ins_obj->priv_data;
-	idx *= 2;
-	if (idx >= arr_obj->size)
-	{
-		printf("[%s] Out of boundary in array %s: size: %d, idx: %d\n", __FUNCTION__,
-			arr_ins_obj->cls->name, arr_obj->size, idx);
-		return -1;
-	}
-
-	arr_obj->ptr[idx] = (void *)data[0];
-	arr_obj->ptr[idx + 1] = (void *)data[1];
-
-	if (is_verbose())
-		dump_array(arr_ins_obj);
-
-	*pc = *pc + 4;
-	return 0;
-}
-
-/* 0x4d aput-object va, vb, vc
- * Store an object reference pointed by va in the element of an array pointed by vb,
- * which is indexed by vc
- * 4d02 0100 - aput-object v2, v1, v0
- */
-static int op_aput_object(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
-{
-	return op_utils_aput(dex, vm, ptr, pc, "aput-object");
-}
-
 /* 0x23 new-array va, vb, type
  * Instantiates an array of given object type
  * the reference of the newly created array into va
@@ -1507,6 +1412,167 @@ static int op_invoke_static(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, i
     /* TODO */
     *pc = *pc + 6;
     return 0;
+}
+
+/*
+ * 23x family aput operation for 4-byte long data
+ */
+static int op_utils_aput(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc, char *op_name)
+{
+	int reg_idx_va = 0;
+	int reg_idx_vb = 0;
+	int reg_idx_vc = 0;
+	int size;
+	int idx;
+	instance_obj *arr_ins_obj;
+	array_obj *arr_obj;
+	unsigned int data;
+
+	reg_idx_va = ptr[*pc + 1];
+	reg_idx_vb = ptr[*pc + 2];
+	reg_idx_vc = ptr[*pc + 3];
+
+	if (is_verbose()) {
+		printf("%s v%d, v%d, v%d", op_name, reg_idx_va, reg_idx_vb, reg_idx_vc);
+		printf("\n");
+	}
+
+	load_reg_to(vm, reg_idx_va, (unsigned char *)&data);
+	load_reg_to(vm, reg_idx_vb, (unsigned char *)&arr_ins_obj);
+	load_reg_to(vm, reg_idx_vc, (unsigned char *)&idx);
+
+	arr_obj = (array_obj *)arr_ins_obj->priv_data;
+	if (idx >= arr_obj->size)
+	{
+		printf("[%s] Out of boundary in array %s: size: %d, idx: %d\n", __FUNCTION__,
+			arr_ins_obj->cls->name, arr_obj->size, idx);
+		return -1;
+	}
+
+	arr_obj->ptr[idx] = (void *)data;
+
+	if (is_verbose())
+		dump_array(arr_ins_obj);
+
+	*pc = *pc + 4;
+	return 0;
+}
+
+/*
+ * 23x family aput operation for 8-byte long data
+ */
+static int op_utils_aput_wide(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc, char *op_name)
+{
+	int reg_idx_va = 0;
+	int reg_idx_vb = 0;
+	int reg_idx_vc = 0;
+	int size;
+	int idx;
+	instance_obj *arr_ins_obj;
+	array_obj *arr_obj;
+	unsigned int data[2];
+
+	reg_idx_va = ptr[*pc + 1];
+	reg_idx_vb = ptr[*pc + 2];
+	reg_idx_vc = ptr[*pc + 3];
+
+	if (is_verbose()) {
+		printf("%s v%d, v%d, v%d", op_name, reg_idx_va, reg_idx_vb, reg_idx_vc);
+		printf("\n");
+	}
+
+	load_reg_to(vm, reg_idx_va, (unsigned char *)&data[0]);
+	load_reg_to(vm, reg_idx_va + 1, (unsigned char *)&data[1]);
+	load_reg_to(vm, reg_idx_vb, (unsigned char *)&arr_ins_obj);
+	load_reg_to(vm, reg_idx_vc, (unsigned char *)&idx);
+
+	arr_obj = (array_obj *)arr_ins_obj->priv_data;
+	idx *= 2;
+	if (idx >= arr_obj->size)
+	{
+		printf("[%s] Out of boundary in array %s: size: %d, idx: %d\n", __FUNCTION__,
+			arr_ins_obj->cls->name, arr_obj->size, idx);
+		return -1;
+	}
+
+	arr_obj->ptr[idx] = (void *)data[0];
+	arr_obj->ptr[idx + 1] = (void *)data[1];
+
+	if (is_verbose())
+		dump_array(arr_ins_obj);
+
+	*pc = *pc + 4;
+	return 0;
+}
+
+/* 0x4b aput va, vb, vc
+ * Store data in va to the element of an array pointed by vb,
+ * which is indexed by vc
+ * 4b02 0100 - aput v2, v1, v0
+ */
+static int op_aput(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	return op_utils_aput(dex, vm, ptr, pc, "aput");
+}
+
+/* 0x4c aput-wide va, vb, vc
+ * Store data in va & va + 1 to the element of an array pointed by vb,
+ * which is indexed by vc
+ * 4c02 0100 - aput-object v2, v1, v0
+ */
+static int op_aput_wide(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	return op_utils_aput_wide(dex, vm, ptr, pc, "aput-wide");
+}
+
+/* 0x4d aput-object va, vb, vc
+ * Store an object reference pointed by va in the element of an array pointed by vb,
+ * which is indexed by vc
+ * 4d02 0100 - aput-object v2, v1, v0
+ */
+static int op_aput_object(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	return op_utils_aput(dex, vm, ptr, pc, "aput-object");
+}
+
+/* 0x4e aput-boolean va, vb, vc
+ * Store boolean data in va to the element of an array pointed by vb,
+ * which is indexed by vc
+ * 4e02 0100 - aput-object v2, v1, v0
+ */
+static int op_aput_boolean(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	return op_utils_aput(dex, vm, ptr, pc, "aput-boolean");
+}
+
+/* 0x4f aput-byte va, vb, vc
+ * Store byte data in va to the element of an array pointed by vb,
+ * which is indexed by vc
+ * 4f02 0100 - aput-object v2, v1, v0
+ */
+static int op_aput_byte(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	return op_utils_aput(dex, vm, ptr, pc, "aput-byte");
+}
+
+/* 0x50 aput-char va, vb, vc
+ * Store character data in va to the element of an array pointed by vb,
+ * which is indexed by vc
+ * 5002 0100 - aput-object v2, v1, v0
+ */
+static int op_aput_char(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	return op_utils_aput(dex, vm, ptr, pc, "aput-char");
+}
+
+/* 0x51 aput-short va, vb, vc
+ * Store short data in va to the element of an array pointed by vb,
+ * which is indexed by vc
+ * 5102 0100 - aput-object v2, v1, v0
+ */
+static int op_aput_short(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	return op_utils_aput(dex, vm, ptr, pc, "aput-short");
 }
 
 /*
@@ -2614,7 +2680,13 @@ static byteCode byteCodes[] = {
     { "if-gez"			  , 0x3b, 4,  op_if_gez },
     { "if-gtz"			  , 0x3c, 4,  op_if_gtz },
     { "if-lez"			  , 0x3d, 4,  op_if_lez },
+    { "aput"              , 0x4b, 4,  op_aput },
+    { "aput-wide"         , 0x4c, 4,  op_aput_wide },
     { "aput-object"       , 0x4d, 4,  op_aput_object },
+    { "aput-boolean"      , 0x4e, 4,  op_aput_boolean },
+    { "aput-byte"         , 0x4f, 4,  op_aput_byte },
+    { "aput-char"         , 0x50, 4,  op_aput_char },
+    { "aput-short"        , 0x51, 4,  op_aput_short },
     { "iget"              , 0x52, 2,  op_iget },
     { "iget-wide"         , 0x53, 2,  op_iget_wide },
 	{ "iget-object"       , 0x54, 2,  op_iget_object },
