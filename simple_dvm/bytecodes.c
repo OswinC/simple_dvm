@@ -677,6 +677,10 @@ static instance_obj *new_array(simple_dalvik_vm *vm, DexFileFormat *dex, int typ
 		return NULL;
 	}
 
+	/* If it's an array of double number, the size should be doubled */
+	if (strcmp(name, "[D") == 0)
+		size <<= 1;
+
 	arr_obj = (array_obj *)malloc(sizeof(array_obj) + (size - 1) * sizeof(void *));
 	if (!arr_obj)
 	{
@@ -1481,8 +1485,8 @@ static int op_utils_aput_wide(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr,
 		printf("\n");
 	}
 
-	load_reg_to(vm, reg_idx_va, (unsigned char *)&data[0]);
-	load_reg_to(vm, reg_idx_va + 1, (unsigned char *)&data[1]);
+	load_reg_to_double(vm, reg_idx_va, (unsigned char *)&data[1]);
+	load_reg_to_double(vm, reg_idx_va + 1, (unsigned char *)&data[0]);
 	load_reg_to(vm, reg_idx_vb, (unsigned char *)&arr_ins_obj);
 	load_reg_to(vm, reg_idx_vc, (unsigned char *)&idx);
 
@@ -1499,7 +1503,7 @@ static int op_utils_aput_wide(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr,
 	arr_obj->ptr[idx + 1] = (void *)data[1];
 
 	if (is_verbose())
-		dump_array(arr_ins_obj);
+		dump_array_wide(arr_ins_obj);
 
 	*pc = *pc + 4;
 	return 0;
