@@ -42,6 +42,44 @@ static void printRegs(simple_dalvik_vm *vm)
     }
 }
 
+static void op_utils_move(simple_dalvik_vm *vm, int reg_idx_vx, int reg_idx_vy)
+{
+	unsigned int data;
+
+	if (is_verbose())
+		printRegs(vm);
+
+	load_reg_to(vm, reg_idx_vy, (unsigned char *)&data);
+	store_to_reg(vm, reg_idx_vx, (unsigned char *)&data);
+
+	if (is_verbose())
+		printRegs(vm);
+}
+
+/* 0x01, move vx, vy
+ *
+ * Move data in vy to vx.
+ *
+ * 0101 - move v1, v0
+ * Move data in v0 to v1.
+ */
+static int op_move(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int reg_idx_vy = 0;
+
+    reg_idx_vx = ptr[*pc + 1] & 0xf;
+    reg_idx_vy = (ptr[*pc + 1] >> 4) & 0xf;
+
+    if (is_verbose())
+        printf("move v%d, v%d\n", reg_idx_vx, reg_idx_vy);
+
+    op_utils_move(vm, reg_idx_vx, reg_idx_vy);
+
+    *pc = *pc + 2;
+    return 0;
+}
+
 /* 0x0a, move-result vx
  *
  * Move the result value of previous method invocation into vx.
@@ -2850,6 +2888,7 @@ static int op_and_int_lit8(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, in
 }
 
 static byteCode byteCodes[] = {
+    { "move"		  , 0x01, 2,  op_move },
     { "move-result"		  , 0x0A, 2,  op_move_result },
     { "move-result-wide"  , 0x0B, 2,  op_move_result_wide },
     { "move-result-object", 0x0C, 2,  op_move_result_object },
