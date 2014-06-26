@@ -868,6 +868,61 @@ static int op_goto_32(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc
     return 0;
 }
 
+/* 0x2b, packed-switch vAA, +BBBBBBBB
+ *
+ * Jump to a new instruction based on the value in the given register,
+ * using a table of offsets corresponding to each value in a particular
+ * integral range, or fall through to the next instruction if there is
+ * no match.
+ *
+ * 2b01 1234 5678  - packed-switch v1, +0x78563412
+ * Conditionally jump according to the comparison of value in v1 and
+ * switch table at pc + 0x78563412, which should fit with the format:
+ *
+ * Name         Format          Description
+ * ident        ushort = 0x0100 identifying pseudo-opcode
+ * size         ushort          number of entries in the table
+ * first_key    int             first (and lowest) switch case value
+ * targets      int[]           list of size relative branch targets.
+ *                              The targets are relative to the address
+ *                              of the switch opcode, not of this table.
+ */
+static int op_packed_switch(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int offset = 0;
+    int offset_word = 0;
+	int value;
+	ushort ident;
+	ushort size;
+	int first_key;
+	int *targets;
+
+    reg_idx_vx = ptr[*pc + 1];
+	offset = (signed int) ((ptr[*pc + 5] << 24) | (ptr[*pc + 4] << 16) | (ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+	offset_word = offset * 2;
+    if (is_verbose())
+        printf("packed-switch v%d, +0x%08x\n", reg_idx_vx, offset);
+
+	load_reg_to(vm, reg_idx_vx, (unsigned char *)&value);
+	ident = (ushort) ((ptr[*pc + offset_word + 1] << 8) | ptr[*pc + offset_word]);
+	size = (ushort) ((ptr[*pc + offset_word + 3] << 8) | ptr[*pc + offset_word + 2]);
+	first_key = (int) ((ptr[*pc + offset_word + 7] << 24) | (ptr[*pc + offset_word + 6] << 16) |
+						(ptr[*pc + offset_word + 5] << 8) | ptr[*pc + offset_word + 4]);
+	targets = (int *) (ptr + *pc + offset_word + 8);
+
+	if (ident != 0x0100)
+		printf("Error: invalid ident for packed switch payload: %04x!\n", ident);
+
+	// if value is in the range of this packed switch table
+	if (value >= first_key || value < first_key + size)
+		*pc = *pc + targets[value - first_key] * 2;
+	else
+		*pc = *pc + 6;
+
+    return 0;
+}
+
 /* 0x32, if-eq vA, vB, +CCCC
  *
  * Branch to the given destination if the given two registers' values compare as equal
@@ -2704,6 +2759,7 @@ static byteCode byteCodes[] = {
     { "goto"			  , 0x28, 2,  op_goto },
     { "goto/16"			  , 0x29, 2,  op_goto_16 },
     { "goto/32"			  , 0x2a, 2,  op_goto_32 },
+    { "packed-switch"	  , 0x2b, 3,  op_packed_switch },
     { "if-eq"			  , 0x32, 4,  op_if_eq },
     { "if-ne"			  , 0x33, 4,  op_if_ne },
     { "if-lt"			  , 0x34, 4,  op_if_lt },
