@@ -1419,6 +1419,99 @@ static int op_invoke_static(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, i
 }
 
 /*
+ * 23x family aget operation for 4-byte long data
+ */
+static int op_utils_aget(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc, char *op_name)
+{
+	int reg_idx_va = 0;
+	int reg_idx_vb = 0;
+	int reg_idx_vc = 0;
+	int size;
+	int idx;
+	instance_obj *arr_ins_obj;
+	array_obj *arr_obj;
+	unsigned int data;
+
+	reg_idx_va = ptr[*pc + 1];
+	reg_idx_vb = ptr[*pc + 2];
+	reg_idx_vc = ptr[*pc + 3];
+
+	if (is_verbose()) {
+		printf("%s v%d, v%d, v%d", op_name, reg_idx_va, reg_idx_vb, reg_idx_vc);
+		printf("\n");
+	}
+
+	load_reg_to(vm, reg_idx_vb, (unsigned char *)&arr_ins_obj);
+	load_reg_to(vm, reg_idx_vc, (unsigned char *)&idx);
+
+	arr_obj = (array_obj *)arr_ins_obj->priv_data;
+	if (idx >= arr_obj->size)
+	{
+		printf("[%s] Out of boundary in array %s: size: %d, idx: %d\n", __FUNCTION__,
+			arr_ins_obj->cls->name, arr_obj->size, idx);
+		return -1;
+	}
+
+	data = (unsigned int)arr_obj->ptr[idx];
+
+	store_to_reg(vm, reg_idx_va, (unsigned char *)&data);
+
+	if (is_verbose())
+		printRegs(vm);
+
+	*pc = *pc + 4;
+	return 0;
+}
+
+/*
+ * 23x family aget operation for 8-byte long data
+ */
+static int op_utils_aget_wide(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc, char *op_name)
+{
+	int reg_idx_va = 0;
+	int reg_idx_vb = 0;
+	int reg_idx_vc = 0;
+	int size;
+	int idx;
+	instance_obj *arr_ins_obj;
+	array_obj *arr_obj;
+	unsigned int data[2];
+
+	reg_idx_va = ptr[*pc + 1];
+	reg_idx_vb = ptr[*pc + 2];
+	reg_idx_vc = ptr[*pc + 3];
+
+	if (is_verbose()) {
+		printf("%s v%d, v%d, v%d", op_name, reg_idx_va, reg_idx_vb, reg_idx_vc);
+		printf("\n");
+	}
+
+	load_reg_to(vm, reg_idx_vb, (unsigned char *)&arr_ins_obj);
+	load_reg_to(vm, reg_idx_vc, (unsigned char *)&idx);
+
+	arr_obj = (array_obj *)arr_ins_obj->priv_data;
+	idx *= 2;
+	if (idx >= arr_obj->size)
+	{
+		printf("[%s] Out of boundary in array %s: size: %d, idx: %d\n", __FUNCTION__,
+			arr_ins_obj->cls->name, arr_obj->size, idx);
+		return -1;
+	}
+
+	data[0] = (unsigned int)arr_obj->ptr[idx];
+	data[1] = (unsigned int)arr_obj->ptr[idx + 1];
+
+	store_double_to_reg(vm, reg_idx_va, (unsigned char *)&data[1]);
+	store_double_to_reg(vm, reg_idx_va + 1, (unsigned char *)&data[0]);
+
+	if (is_verbose())
+		printRegs(vm);
+
+	*pc = *pc + 4;
+	return 0;
+}
+
+/*
  * 23x family aput operation for 4-byte long data
  */
 static int op_utils_aput(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc, char *op_name)
@@ -1507,6 +1600,76 @@ static int op_utils_aput_wide(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr,
 
 	*pc = *pc + 4;
 	return 0;
+}
+
+/* 0x44 aget va, vb, vc
+ * Load data from the element of an array pointed by vb,
+ * which is indexed by vc, to va
+ * 4402 0100 - aput v2, v1, v0
+ */
+static int op_aget(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	return op_utils_aget(dex, vm, ptr, pc, "aget");
+}
+
+/* 0x45 aget-wide va, vb, vc
+ * Load data from the element of an array pointed by vb,
+ * which is indexed by vc, to va,va + 1
+ * 4502 0100 - aput v2, v1, v0
+ */
+static int op_aget_wide(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	return op_utils_aget_wide(dex, vm, ptr, pc, "aget-wide");
+}
+
+/* 0x46 aget-object va, vb, vc
+ * Load data from the element of an array pointed by vb,
+ * which is indexed by vc, to va
+ * 4602 0100 - aput v2, v1, v0
+ */
+static int op_aget_object(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	return op_utils_aget(dex, vm, ptr, pc, "aget-object");
+}
+
+/* 0x47 aget-boolean va, vb, vc
+ * Load data from the element of an array pointed by vb,
+ * which is indexed by vc, to va
+ * 4702 0100 - aput v2, v1, v0
+ */
+static int op_aget_boolean(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	return op_utils_aget(dex, vm, ptr, pc, "aget-boolean");
+}
+
+/* 0x48 aget-byte va, vb, vc
+ * Load data from the element of an array pointed by vb,
+ * which is indexed by vc, to va
+ * 4802 0100 - aput v2, v1, v0
+ */
+static int op_aget_byte(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	return op_utils_aget(dex, vm, ptr, pc, "aget-byte");
+}
+
+/* 0x49 aget-char va, vb, vc
+ * Load data from the element of an array pointed by vb,
+ * which is indexed by vc, to va
+ * 4902 0100 - aput v2, v1, v0
+ */
+static int op_aget_char(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	return op_utils_aget(dex, vm, ptr, pc, "aget-char");
+}
+
+/* 0x4a aget-short va, vb, vc
+ * Load data from the element of an array pointed by vb,
+ * which is indexed by vc, to va
+ * 4a02 0100 - aput v2, v1, v0
+ */
+static int op_aget_short(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	return op_utils_aget(dex, vm, ptr, pc, "aget-short");
 }
 
 /* 0x4b aput va, vb, vc
@@ -2716,6 +2879,13 @@ static byteCode byteCodes[] = {
     { "if-gez"			  , 0x3b, 4,  op_if_gez },
     { "if-gtz"			  , 0x3c, 4,  op_if_gtz },
     { "if-lez"			  , 0x3d, 4,  op_if_lez },
+    { "aget"              , 0x44, 4,  op_aget },
+    { "aget-wide"         , 0x45, 4,  op_aget_wide },
+    { "aget-object"       , 0x46, 4,  op_aget_object },
+    { "aget-boolean"      , 0x47, 4,  op_aget_boolean },
+    { "aget-byte"         , 0x48, 4,  op_aget_byte },
+    { "aget-char"         , 0x49, 4,  op_aget_char },
+    { "aget-short"        , 0x4a, 4,  op_aget_short },
     { "aput"              , 0x4b, 4,  op_aput },
     { "aput-wide"         , 0x4c, 4,  op_aput_wide },
     { "aput-object"       , 0x4d, 4,  op_aput_object },
