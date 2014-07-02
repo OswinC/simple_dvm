@@ -292,6 +292,29 @@ static int op_const(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
     return 0;
 }
 
+/* 0x17, const-wide/32 vx,lit32
+ * Puts the 32 bit constant into vx and vx+1 registers.
+ * Used to initialize wide values.
+ * 1701 0400 0100 - const-wide/32 v1, #long 65540 // #00010004
+ * Puts the long constant of 65540 into v1 register.
+ */
+static int op_const_wide_32(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+	int ivalue = 0;
+	long long lvalue = 0;
+    int reg_idx_vx = 0;
+    unsigned char *ptr_value = (unsigned char *) &lvalue;
+    reg_idx_vx = ptr[*pc + 1];
+	ivalue = (ptr[*pc + 5] << 24 | ptr[*pc + 4] << 16 | ptr[*pc + 3] << 8 | ptr[*pc + 2]);
+	lvalue = ivalue;
+    if (is_verbose())
+        printf("const-wide/32 v%d, #long %lld\n", reg_idx_vx, ivalue);
+    store_double_to_reg(vm, reg_idx_vx, ptr_value + 4);
+    store_double_to_reg(vm, reg_idx_vx + 1, ptr_value);
+    *pc = *pc + 6;
+    return 0;
+}
+
 /* 0x19, const-wide/high16 vx,lit16
  * Puts the 16 bit constant into the highest 16 bit of vx
  * and vx+1 registers.
@@ -2954,6 +2977,7 @@ static byteCode byteCodes[] = {
     { "const/4"           , 0x12, 2,  op_const_4 },
     { "const/16"          , 0x13, 4,  op_const_16 },
     { "const"			  , 0x14, 6,  op_const },
+    { "const-wide/32"	  , 0x17, 6,  op_const_wide_32 },
     { "const-wide/high16" , 0x19, 4,  op_const_wide_high16 },
     { "const-string"      , 0x1a, 4,  op_const_string },
     { "new-instance"      , 0x22, 4,  op_new_instance },
