@@ -15,6 +15,8 @@ static int invoke_method(char *name, DexFileFormat *dex, simple_dalvik_vm *vm, m
 int new_invoke_frame(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m);
 void stack_push(simple_dalvik_vm *vm, u4 data);
 u4 stack_pop(simple_dalvik_vm *vm);
+static int op_utils_invoke_35c_parse(DexFileFormat *dex, u1 *ptr, int *pc,
+                                     invoke_parameters *p);
 
 static int find_const_string(DexFileFormat *dex, char *entry)
 {
@@ -818,6 +820,135 @@ static int op_new_array(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *
     store_to_reg(vm, reg_idx_va, (unsigned char *)&ins_obj);
 
     *pc = *pc + 4;
+    return 0;
+}
+
+static void *util_op_filled_new_array(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc,
+		invoke_parameters *p, int dimension)
+{
+	array_obj *arr_obj;
+	instance_obj *ins_obj;
+	int reg_idx = p->reg_idx[dimension];
+	int size;
+	int i;
+
+	load_reg_to(vm, reg_idx, (unsigned char *)&size);
+	printf("dimension: %d size %d\n", dimension, size);
+
+	if (dimension < p->reg_count - 1)
+	{
+		arr_obj = (array_obj *)malloc(sizeof(array_obj) + (size - 1) * sizeof(void *));
+		if (!arr_obj)
+		{
+			printf("[%s] array obj malloc failure\n", __FUNCTION__);
+			return NULL;
+		}
+	}
+	else if (dimension == (p->reg_count - 1))
+	{
+		ins_obj = new_array(vm, dex, p->method_id, size);
+		if (!ins_obj)
+		{
+			printf("[%s] array obj malloc failure\n", __FUNCTION__);
+			return NULL;
+		}
+
+		arr_obj = (array_obj *)ins_obj->priv_data;
+	}
+
+	arr_obj->size = size;
+
+	if (dimension < p->reg_count - 1)
+	{
+		for (i = 0; i < size; i++)
+		{
+			void *tmp;
+
+			tmp = util_op_filled_new_array(dex, vm, ptr, pc, p, dimension + 1);
+			arr_obj->ptr[i] = tmp;
+		}
+	}
+
+	if (dimension < p->reg_count - 1)
+		return arr_obj;
+	else
+		return ins_obj;
+}
+
+/* filled-new-array { parameters } */
+/*
+ * 2453 0600 0421 - filled-new-array { v4, v0, v1, v2, v3}, [I // type@0006
+ * 2420 0200 3200   filled-new-array {v2, v3}, [I // type@0002
+ */
+static int op_filled_new_array(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    invoke_parameters *p = &vm->p;
+    char *type_name;
+    char *name = "filled-new-array";
+    void *obj;
+
+    op_utils_invoke_35c_parse(dex, ptr, pc, &vm->p);
+    type_name = get_type_item_name(dex, p->method_id);
+
+    switch (p->reg_count) {
+        case 0:
+            if (is_verbose())
+                printf("%s {} type_id 0x%04x", name, p->method_id);
+            break;
+        case 1:
+            if (is_verbose())
+                printf("%s, {v%d} type_id 0x%04x",
+                       name, p->reg_idx[0], p->method_id);
+            break;
+        case 2:
+            if (is_verbose())
+                printf("%s {v%d, v%d} type_id 0x%04x",
+                       name,
+                       p->reg_idx[0], p->reg_idx[1],
+                       p->method_id);
+            break;
+        case 3:
+            if (is_verbose())
+                printf("%s {v%d, v%d, v%d} type_id 0x%04x",
+                       name,
+                       p->reg_idx[0], p->reg_idx[1], p->reg_idx[2],
+                       p->method_id);
+            break;
+        case 4:
+            if (is_verbose())
+                printf("%s {v%d, v%d, v%d, v%d} type_id 0x%04x",
+                       name,
+                       p->reg_idx[0], p->reg_idx[1],
+                       p->reg_idx[2], p->reg_idx[3],
+                       p->method_id);
+            break;
+        case 5:
+            if (is_verbose())
+                printf("%s {v%d, v%d, v%d, v%d, v%d} type_id 0x%04x",
+                       name,
+                       p->reg_idx[0], p->reg_idx[1], p->reg_idx[2],
+                       p->reg_idx[3], p->reg_idx[4],
+                       p->method_id);
+            break;
+        default:
+            break;
+    }
+
+    if (is_verbose())
+        printf(", %s\n", type_name);
+
+    obj = util_op_filled_new_array(dex, vm, ptr, pc, p, 0);
+    if (!obj)
+    {
+	printf("[%s] Can't create array object\n", __FUNCTION__);
+	return -1;
+    }
+
+    store_to_bottom_half_result(vm, (unsigned char *)&obj);
+
+//  dump_array_dimension(obj, p->reg_count);
+
+    *pc = *pc + 6;
     return 0;
 }
 
@@ -3002,6 +3133,7 @@ static byteCode byteCodes[] = {
     { "const-string"      , 0x1a, 4,  op_const_string },
     { "new-instance"      , 0x22, 4,  op_new_instance },
     { "new-array"         , 0x23, 4,  op_new_array },
+    { "filled-new-array"  , 0x24, 6,  op_filled_new_array },
     { "goto"			  , 0x28, 2,  op_goto },
     { "goto/16"			  , 0x29, 2,  op_goto_16 },
     { "goto/32"			  , 0x2a, 2,  op_goto_32 },

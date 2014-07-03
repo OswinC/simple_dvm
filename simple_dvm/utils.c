@@ -75,6 +75,14 @@ void store_double_to_result(simple_dalvik_vm *vm, unsigned char *ptr)
     vm->result[7] = ptr[5];
 }
 
+void store_to_bottom_half_result(simple_dalvik_vm *vm, unsigned char *ptr)
+{
+    vm->result[4] = ptr[0];
+    vm->result[5] = ptr[1];
+    vm->result[6] = ptr[2];
+    vm->result[7] = ptr[3];
+}
+
 void store_double_to_reg(simple_dalvik_vm *vm, int id, unsigned char *ptr)
 {
     simple_dvm_register *r = &vm->regs[id];
@@ -510,5 +518,32 @@ void dump_array(instance_obj *array)
 	printf("array class: %s\n", array->cls->name);
 	for (i = 0; i < arr_obj->size; i++)
 		printf("[%d]: 0x%x\n", i, arr_obj->ptr[i]);
+}
+
+void dump_array_dimension(array_obj *array, int dimension)
+{
+	int i;
+	array_obj *aptr = array;
+
+	printf("[d%d]\n", dimension);
+
+	if ((dimension - 1) > 1)
+	{
+		for (i = 0; i < aptr->size; i++)
+		{
+			printf("[%d]: 0x%x\n", i, aptr->ptr[i]);
+			dump_array_dimension(aptr->ptr[i], dimension - 1);
+		}
+	}
+	else if ((dimension - 1) == 1)
+	{
+		for (i = 0; i < aptr->size; i++)
+		{
+			printf("[%d]: 0x%x\n", i, aptr->ptr[i]);
+			dump_array(aptr->ptr[i]);
+		}
+	}
+	else
+		return;
 }
 
