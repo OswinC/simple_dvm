@@ -835,7 +835,6 @@ static void *util_op_filled_new_array(DexFileFormat *dex, simple_dalvik_vm *vm, 
 	int i;
 
 	load_reg_to(vm, reg_idx, (unsigned char *)&size);
-	printf("dimension: %d size %d\n", dimension, size);
 
 	if (dimension < p->reg_count - 1)
 	{
