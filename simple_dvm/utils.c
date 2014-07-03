@@ -531,7 +531,7 @@ void dump_array_dimension(array_obj *array, int dimension)
 	{
 		for (i = 0; i < aptr->size; i++)
 		{
-			printf("[%d]: 0x%x\n", i, aptr->ptr[i]);
+			printf("[%d:%d]: 0x%x\n", dimension, i, aptr->ptr[i]);
 			dump_array_dimension(aptr->ptr[i], dimension - 1);
 		}
 	}
@@ -539,7 +539,7 @@ void dump_array_dimension(array_obj *array, int dimension)
 	{
 		for (i = 0; i < aptr->size; i++)
 		{
-			printf("[%d]: 0x%x\n", i, aptr->ptr[i]);
+			printf("[%d:%d]: 0x%x\n", dimension, i, aptr->ptr[i]);
 			dump_array(aptr->ptr[i]);
 		}
 	}

@@ -948,7 +948,8 @@ static int op_filled_new_array(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr
 
     store_to_bottom_half_result(vm, (unsigned char *)&obj);
 
-//  dump_array_dimension(obj, p->reg_count);
+    if (is_verbose())
+        dump_array_dimension(obj, p->reg_count);
 
     *pc = *pc + 6;
     return 0;
