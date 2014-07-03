@@ -6,6 +6,11 @@
 
 #include "java_lib.h"
 
+typedef struct _String {
+	int buf_size;
+    char *buf;
+} String;
+
 int java_lang_math_random(DexFileFormat *dex, simple_dalvik_vm *vm, char *type)
 {
     double r = 0.0f;
@@ -20,6 +25,43 @@ int java_lang_math_random(DexFileFormat *dex, simple_dalvik_vm *vm, char *type)
     if (is_verbose() > 3) printf("get random number = %f \n", r);
     store_double_to_result(vm, (unsigned char *) &r);
     load_result_to_double(vm, (unsigned char *) &test);
+
+    return 0;
+}
+
+/* java.io.InputStreamReader.<init> */
+int java_io_inputstreamreader_init(DexFileFormat *dex, simple_dalvik_vm *vm, char *type)
+{
+    if (is_verbose())
+        printf("call java.io.InputStreamReader.<init>\n");
+    return 0;
+}
+
+/* java.io.BufferedReader */
+static char read_buf[2048];
+
+/* java.io.BufferedReader.<init> */
+int java_io_bufferedreader_init(DexFileFormat *dex, simple_dalvik_vm *vm, char *type)
+{
+    if (is_verbose())
+        printf("call java.io.BufferedReader.<init>\n");
+    return 0;
+}
+
+/* java.io.BufferedReader.readLine */
+int java_io_bufferedreader_readline(DexFileFormat *dex, simple_dalvik_vm *vm, char *type)
+{
+	String *s;
+    if (is_verbose())
+        printf("call java.io.BufferedReader.readLine\n");
+	fgets(read_buf, sizeof(read_buf), stdin);
+
+	s = malloc(sizeof(String) + strlen(read_buf) + 1);
+	s->buf_size = strlen(read_buf) + 1;
+	s->buf = s + sizeof(String);
+
+	store_to_reg(vm, 0, (u1 *)s);
+	move_reg_to_bottom_half_result(vm, 0);
 
     return 0;
 }
@@ -88,6 +130,9 @@ int java_lang_string_builder_to_string(DexFileFormat *dex, simple_dalvik_vm *vm,
 static java_lang_method method_table[] = {
     {"Ljava/lang/Math;",          "random",   java_lang_math_random},
     {"Ljava/io/PrintStream;",     "println",  java_io_print_stream_println},
+    {"Ljava/io/InputStreamReader;", "<init>",   java_io_inputstreamreader_init},
+    {"Ljava/io/BufferedReader;", "<init>",   java_io_bufferedreader_init},
+    {"Ljava/io/BufferedReader;", "readLine",   java_io_bufferedreader_readline},
     {"Ljava/lang/StringBuilder;", "<init>",   java_lang_string_builder_init},
     {"Ljava/lang/StringBuilder;", "append",   java_lang_string_builder_append},
     {"Ljava/lang/StringBuilder;", "toString", java_lang_string_builder_to_string}
