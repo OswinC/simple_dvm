@@ -734,6 +734,7 @@ static instance_obj *new_array(simple_dalvik_vm *vm, DexFileFormat *dex, int typ
 	instance_obj *ins_obj;
 	array_obj *arr_obj;
 	char *name = get_type_item_name(dex, type_id);
+	int arr_obj_size;
 
 	cls_obj = find_class_obj(vm, name);
         if (!cls_obj)
@@ -762,8 +763,9 @@ static instance_obj *new_array(simple_dalvik_vm *vm, DexFileFormat *dex, int typ
 	/* If it's an array of double number, the size should be doubled */
 	if (strcmp(name, "[D") == 0)
 		size <<= 1;
+	arr_obj_size = sizeof(array_obj) + (size - 1) * sizeof(void *);
 
-	arr_obj = (array_obj *)malloc(sizeof(array_obj) + (size - 1) * sizeof(void *));
+	arr_obj = (array_obj *)malloc(arr_obj_size);
 	if (!arr_obj)
 	{
 		printf("[%s] array obj malloc fail\n", __FUNCTION__);
@@ -773,7 +775,7 @@ static instance_obj *new_array(simple_dalvik_vm *vm, DexFileFormat *dex, int typ
 	}
 
 	memset(ins_obj, 0, sizeof(instance_obj));
-	memset(arr_obj, 0, sizeof(instance_obj));
+	memset(arr_obj, 0, arr_obj_size);
 	arr_obj->size = size;
 	ins_obj->cls = cls_obj;
 	ins_obj->priv_data = (void *)arr_obj;
