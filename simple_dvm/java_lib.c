@@ -11,6 +11,10 @@ typedef struct _String {
     char *buf;
 } String;
 
+typedef struct _Long {
+	long long val;
+} Long;
+
 int java_lang_math_random(DexFileFormat *dex, simple_dalvik_vm *vm, char *type)
 {
     double r = 0.0f;
@@ -57,10 +61,15 @@ int java_io_bufferedreader_readline(DexFileFormat *dex, simple_dalvik_vm *vm, ch
 	fgets(read_buf, sizeof(read_buf), stdin);
 
 	s = malloc(sizeof(String) + strlen(read_buf) + 1);
+	if (!s)
+		return -1;
 	s->buf_size = strlen(read_buf) + 1;
-	s->buf = s + sizeof(String);
+	s->buf = (char *) s + sizeof(String);
+	strcpy(s->buf, read_buf);
+	// remove the newline character
+	strtok(s->buf, "\n");
 
-	store_to_reg(vm, 0, (u1 *)s);
+	store_to_reg(vm, 0, (u1 *)&s);
 	move_reg_to_bottom_half_result(vm, 0);
 
     return 0;
@@ -87,6 +96,41 @@ int java_io_print_stream_println(DexFileFormat *dex, simple_dalvik_vm *vm, char 
     } else {
         printf("%s\n", get_string_data(dex, string_id));
     }
+    return 0;
+}
+
+int java_lang_long_valueof(DexFileFormat *dex, simple_dalvik_vm *vm, char *type)
+{
+    invoke_parameters *p = &vm->p;
+	String *s;
+	Long *l;
+    if (is_verbose())
+        printf("call java.lang.Long.valueOf\n");
+
+    load_reg_to(vm, p->reg_idx[0], (unsigned char *) &s);
+	l = malloc(sizeof(Long));
+	l->val = atoll(s->buf);
+
+	store_to_reg(vm, 0, (u1 *)&l);
+	move_reg_to_bottom_half_result(vm, 0);
+
+    return 0;
+}
+
+int java_lang_long_longvalue(DexFileFormat *dex, simple_dalvik_vm *vm, char *type)
+{
+    invoke_parameters *p = &vm->p;
+	Long *l;
+    if (is_verbose())
+        printf("call java.lang.Long.valueOf\n");
+
+    load_reg_to(vm, p->reg_idx[0], (unsigned char *) &l);
+
+	store_double_to_reg(vm, 0, (u1 *)&l->val + 4);
+	store_double_to_reg(vm, 1, (u1 *)&l->val);
+	move_reg_to_bottom_half_result(vm, 0);
+	move_reg_to_top_half_result(vm, 1);
+
     return 0;
 }
 
@@ -133,6 +177,8 @@ static java_lang_method method_table[] = {
     {"Ljava/io/InputStreamReader;", "<init>",   java_io_inputstreamreader_init},
     {"Ljava/io/BufferedReader;", "<init>",   java_io_bufferedreader_init},
     {"Ljava/io/BufferedReader;", "readLine",   java_io_bufferedreader_readline},
+    {"Ljava/lang/Long;", "valueOf",   java_lang_long_valueof},
+    {"Ljava/lang/Long;", "longValue",   java_lang_long_longvalue},
     {"Ljava/lang/StringBuilder;", "<init>",   java_lang_string_builder_init},
     {"Ljava/lang/StringBuilder;", "append",   java_lang_string_builder_append},
     {"Ljava/lang/StringBuilder;", "toString", java_lang_string_builder_to_string}
