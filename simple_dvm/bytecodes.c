@@ -379,6 +379,54 @@ static int op_const_string(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, in
     return 0;
 }
 
+class_def_item *find_class_def(DexFileFormat *dex, int type_id);
+class_data_item *find_class_data(DexFileFormat *dex, int type_id);
+class_obj *create_class_obj(simple_dalvik_vm *vm, DexFileFormat *dex, class_def_item *class_def, class_data_item *class_data);
+/* 0x1c, const-class vx, type_id
+ * Puts reference to a class identified by type_id into vx.
+ * 1C08 0000 - const-class v8, LTest // type@0000
+ * Puts reference to type@0000 (entry #0 in the string table) into v8.
+ */
+static int op_const_class(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int type_id = 0;
+    class_def_item *class_def;
+    class_data_item *class_data;
+    class_obj *cls_obj;
+
+    reg_idx_vx = ptr[*pc + 1];
+    type_id = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
+
+    if (is_verbose())
+        printf("const-class v%d, type_id 0x%04x\n",
+               reg_idx_vx , type_id);
+
+    class_data = find_class_data(dex, type_id);
+    if (!class_data)
+    {
+        printf("[%s] No class data found: %s\n", __FUNCTION__, get_type_item_name(dex, type_id));
+        return -1;
+    }
+    class_def = find_class_def(dex, type_id);
+    if (!class_data)
+    {
+        printf("[%s] No class def found: %s\n", __FUNCTION__, get_type_item_name(dex, type_id));
+        return -1;
+    }
+
+    cls_obj = create_class_obj(vm, dex, class_def, class_data);
+    if (!cls_obj)
+    {
+        printf("cls_obj create fail %s\n", get_type_item_name(dex, type_id));
+        return -1;
+    }
+
+    store_to_reg(vm, reg_idx_vx, (unsigned char *) &cls_obj);
+    *pc = *pc + 4;
+    return 0;
+}
+
 class_def_item *find_class_def(DexFileFormat *dex, int type_id)
 {
 	int i;
@@ -3116,6 +3164,7 @@ static byteCode byteCodes[] = {
     { "const-wide/32"	  , 0x17, 6,  op_const_wide_32 },
     { "const-wide/high16" , 0x19, 4,  op_const_wide_high16 },
     { "const-string"      , 0x1a, 4,  op_const_string },
+    { "const-class"       , 0x1c, 4,  op_const_class },
     { "new-instance"      , 0x22, 4,  op_new_instance },
     { "new-array"         , 0x23, 4,  op_new_array },
     { "filled-new-array"  , 0x24, 6,  op_filled_new_array },
