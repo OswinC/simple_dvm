@@ -825,55 +825,32 @@ static int op_new_array(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *
     return 0;
 }
 
-static void *util_op_filled_new_array(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc,
-		invoke_parameters *p, int dimension)
+static instance_obj *util_op_filled_new_array(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc,
+		invoke_parameters *p)
 {
 	array_obj *arr_obj;
 	instance_obj *ins_obj;
-	int reg_idx = p->reg_idx[dimension];
-	int size;
+	int size = p->reg_count;
 	int i;
 
-	load_reg_to(vm, reg_idx, (unsigned char *)&size);
-
-	if (dimension < p->reg_count - 1)
+	ins_obj = new_array(vm, dex, p->method_id, size);
+	if (!ins_obj)
 	{
-		arr_obj = (array_obj *)malloc(sizeof(array_obj) + (size - 1) * sizeof(void *));
-		if (!arr_obj)
-		{
-			printf("[%s] array obj malloc failure\n", __FUNCTION__);
-			return NULL;
-		}
+		printf("[%s] array obj malloc failure\n", __FUNCTION__);
+		return NULL;
 	}
-	else if (dimension == (p->reg_count - 1))
-	{
-		ins_obj = new_array(vm, dex, p->method_id, size);
-		if (!ins_obj)
-		{
-			printf("[%s] array obj malloc failure\n", __FUNCTION__);
-			return NULL;
-		}
-
-		arr_obj = (array_obj *)ins_obj->priv_data;
-	}
+	arr_obj = (array_obj *)ins_obj->priv_data;
 
 	arr_obj->size = size;
-
-	if (dimension < p->reg_count - 1)
+	for (i = 0; i < size; i++)
 	{
-		for (i = 0; i < size; i++)
-		{
-			void *tmp;
+		unsigned int tmp;
 
-			tmp = util_op_filled_new_array(dex, vm, ptr, pc, p, dimension + 1);
-			arr_obj->ptr[i] = tmp;
-		}
+		load_reg_to(vm, p->reg_idx[i], (unsigned char *)&tmp);
+		arr_obj->ptr[i] = (void *)tmp;
 	}
 
-	if (dimension < p->reg_count - 1)
-		return arr_obj;
-	else
-		return ins_obj;
+	return ins_obj;
 }
 
 /* filled-new-array { parameters } */
@@ -886,7 +863,7 @@ static int op_filled_new_array(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr
     invoke_parameters *p = &vm->p;
     char *type_name;
     char *name = "filled-new-array";
-    void *obj;
+    instance_obj *obj;
 
     op_utils_invoke_35c_parse(dex, ptr, pc, &vm->p);
     type_name = get_type_item_name(dex, p->method_id);
@@ -938,7 +915,7 @@ static int op_filled_new_array(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr
     if (is_verbose())
         printf(", %s\n", type_name);
 
-    obj = util_op_filled_new_array(dex, vm, ptr, pc, p, 0);
+    obj = util_op_filled_new_array(dex, vm, ptr, pc, p);
     if (!obj)
     {
 	printf("[%s] Can't create array object\n", __FUNCTION__);
@@ -948,7 +925,7 @@ static int op_filled_new_array(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr
     store_to_bottom_half_result(vm, (unsigned char *)&obj);
 
     if (is_verbose())
-        dump_array_dimension(obj, p->reg_count);
+        dump_array(obj);
 
     *pc = *pc + 6;
     return 0;
