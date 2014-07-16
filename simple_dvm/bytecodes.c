@@ -962,7 +962,7 @@ static int op_new_instance(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, in
         printf("\n");
     }
 
-    if (!strcmp("Ljava/lang/StringBuilder;", get_type_item_name(dex, type_id)))
+    if (!strncmp("Ljava", get_type_item_name(dex, type_id), strlen("Ljava")))
     {
         ins_obj = new_instance_java_lang_library(vm, dex, type_id);
 	if (!ins_obj)
@@ -1437,9 +1437,7 @@ static int invoke_method(char *name, DexFileFormat *dex, simple_dalvik_vm *vm,
 	u4 values[32];
 	u4 tmp;
 
-	if (!strcmp(name, "invoke-direct"))
-		method = find_method(dex, (int)m->class_idx, (int)m->name_idx);
-	else if (!strcmp(name, "invoke-virtual"))
+	if (!strcmp(name, "invoke-virtual"))
 	{
 		instance_obj *ins_obj;
 
@@ -1450,8 +1448,7 @@ static int invoke_method(char *name, DexFileFormat *dex, simple_dalvik_vm *vm,
 		// FIXME
 	else
 	{
-		printf("%s: Invalid op code: %s\n", name);
-		return 0;
+		method = find_method(dex, (int)m->class_idx, (int)m->name_idx);
 	}
 
 	if (!method)
@@ -2160,7 +2157,7 @@ static int op_utils_sget(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int 
         printf("op_utils_sget v%d, field 0x%04x (%s.%s)\n", reg_idx_va, field_id, class_name, field_name);
     }
 
-    if (strcmp(class_name, "Ljava/lang/System;") == 0)
+    if (strncmp(class_name, "Ljava", strlen("Ljava")) == 0)
 	    return 0;
 
     if (is_verbose())
@@ -2205,6 +2202,9 @@ static int op_utils_sget_wide(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr,
         printf("op_utils_sget_wide v%d, field 0x%04x (%s.%s)\n", reg_idx_va, field_id, class_name, field_name);
     }
 
+    if (strncmp(class_name, "Ljava", strlen("Ljava")) == 0)
+	    return 0;
+
     if (is_verbose())
     {
 	    class_obj *obj;
@@ -2247,6 +2247,9 @@ static int op_utils_sput(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int 
         printf("op_utils_sput v%d, field 0x%04x (%s.%s)\n", reg_idx_va, field_id, class_name, field_name);
     }
 
+    if (strncmp(class_name, "Ljava", strlen("Ljava")) == 0)
+	    return 0;
+
     if (is_verbose())
     {
 	    class_obj *obj;
@@ -2288,6 +2291,9 @@ static int op_utils_sput_wide(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr,
     if (is_verbose()) {
         printf("op_utils_sput v%d, field 0x%04x (%s.%s)\n", reg_idx_va, field_id, class_name, field_name);
     }
+
+    if (strncmp(class_name, "Ljava", strlen("Ljava")) == 0)
+	    return 0;
 
     if (is_verbose())
     {
