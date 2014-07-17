@@ -662,6 +662,9 @@ class_obj *create_class_obj(simple_dalvik_vm *vm, DexFileFormat *dex, class_def_
 	if (method)
 		invoke_method("invoke-direct", dex, vm, method, &vm->p);
 
+	if (is_verbose())
+		printf("Class object for %s is created: 0x%08x\n", obj->name, obj);
+
 	return obj;
 }
 
