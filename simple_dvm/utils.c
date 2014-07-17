@@ -520,30 +520,35 @@ void dump_array(instance_obj *array)
 		printf("[%d]: 0x%x\n", i, arr_obj->ptr[i]);
 }
 
+void __dump_array_dim(array_obj *array, int dimension, int depth)
+{
+	int i;
+
+	if (depth < dimension - 1)
+	{
+		for (i = 0; i < array->size; i++)
+		{
+			printf("[%d:%d]: 0x%x\n", depth, i, array->ptr[i]);
+			__dump_array_dim(array->ptr[i], dimension, depth + 1);
+		}
+
+	}
+	else
+	{
+		for (i = 0; i < array->size; i++)
+		{
+			printf("[%d:%d]: 0x%x\n", depth, i, array->ptr[i]);
+		}
+	}
+
+}
+
 void dump_array_dimension(array_obj *array, int dimension)
 {
 	int i;
 	array_obj *aptr = array;
 
 	printf("[d%d]\n", dimension);
-
-	if ((dimension - 1) > 1)
-	{
-		for (i = 0; i < aptr->size; i++)
-		{
-			printf("[%d:%d]: 0x%x\n", dimension, i, aptr->ptr[i]);
-			dump_array_dimension(aptr->ptr[i], dimension - 1);
-		}
-	}
-	else if ((dimension - 1) == 1)
-	{
-		for (i = 0; i < aptr->size; i++)
-		{
-			printf("[%d:%d]: 0x%x\n", dimension, i, aptr->ptr[i]);
-			dump_array(aptr->ptr[i]);
-		}
-	}
-	else
-		return;
+	__dump_array_dim(array, dimension, 0);
 }
 
