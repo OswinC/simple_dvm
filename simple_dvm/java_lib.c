@@ -177,7 +177,7 @@ array_obj *array_create_multi_dimension(DexFileFormat *dex, simple_dalvik_vm *vm
 	int size = (int)dim->ptr[dimension];
 	int i;
 
-	arr_obj = (array_obj *)malloc(sizeof(array_obj) + size - 1);
+	arr_obj = (array_obj *)malloc(sizeof(array_obj) + (size - 1) * sizeof(void *));
 	if (!arr_obj)
 	{
 		printf("[%s] malloc fail\n", __FUNCTION__);
@@ -268,7 +268,10 @@ int java_lang_reflect_array_new_instance(DexFileFormat *dex, simple_dalvik_vm *v
 
     store_to_bottom_half_result(vm, (unsigned char *)&result_ins_obj);
     if (is_verbose())
-	    printf("Array class pointer: %p\n", result_ins_obj);
+    {
+        printf("Array class pointer: %p\n", result_ins_obj);
+	dump_array_dimension(result_arr, dim_arr_obj->size);
+    }
 
     return 0;
 }
