@@ -409,7 +409,7 @@ static int op_const_class(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int
         return -1;
     }
     class_def = find_class_def(dex, type_id);
-    if (!class_data)
+    if (!class_def)
     {
         printf("[%s] No class def found: %s\n", __FUNCTION__, get_type_item_name(dex, type_id));
         return -1;
@@ -708,6 +708,9 @@ class_obj *create_class_obj(simple_dalvik_vm *vm, DexFileFormat *dex, class_def_
 	method = get_method_item_by_name(dex, class_def->class_idx, "<clinit>");
 	if (method)
 		invoke_method("invoke-direct", dex, vm, method, &vm->p);
+
+	if (is_verbose())
+		printf("Class object for %s is created: 0x%08x\n", obj->name, obj);
 
 	return obj;
 }
@@ -1074,7 +1077,7 @@ static int op_new_instance(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, in
         return -1;
     }
     class_def = find_class_def(dex, type_id);
-    if (!class_data)
+    if (!class_def)
     {
         printf("[%s] No class def found: %s\n", __FUNCTION__, get_type_item_name(dex, type_id));
         return -1;

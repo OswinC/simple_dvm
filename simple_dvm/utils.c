@@ -196,6 +196,21 @@ void load_field_to_wide(simple_dalvik_vm *vm, int val_id, int obj_id, char *fiel
     store_double_to_reg(vm, val_id + 1, ptr);
 }
 
+obj_field *find_static_field(class_obj *obj_itr, char *field_name)
+{
+	int i;
+	do {
+		for (i = 0; i < obj_itr->field_size; i++)
+		{
+			if (!strcmp(field_name, obj_itr->fields[i].name))
+			{
+				return &obj_itr->fields[i];
+			}
+		}
+	} while(obj_itr = obj_itr->parent);
+	return NULL;
+}
+
 class_obj *find_class_obj(simple_dalvik_vm *vm, char *name);
 /*
  * Store the value in register "val_id" to "field_name" of the class object
@@ -214,14 +229,7 @@ void load_static_field_to(simple_dalvik_vm *vm, int val_id, char *class_name, ch
 		return;
 	}
 
-	for (i = 0; i < obj->field_size; i++)
-	{
-		if (!strncmp(field_name, obj->fields[i].name, strlen(field_name)))
-		{
-			field = &obj->fields[i];
-			break;
-		}
-	}
+	field = find_static_field(obj, field_name);
 
 	if (!field)
 	{
@@ -250,14 +258,7 @@ void load_static_field_to_wide(simple_dalvik_vm *vm, int val_id, char *class_nam
 		return;
 	}
 
-	for (i = 0; i < obj->field_size; i++)
-	{
-		if (!strncmp(field_name, obj->fields[i].name, strlen(field_name)))
-		{
-			field = &obj->fields[i];
-			break;
-		}
-	}
+	field = find_static_field(obj, field_name);
 
 	if (!field)
 	{
@@ -287,14 +288,7 @@ void store_to_static_field(simple_dalvik_vm *vm, int val_id, char *class_name, c
 		return;
 	}
 
-	for (i = 0; i < obj->field_size; i++)
-	{
-		if (!strncmp(field_name, obj->fields[i].name, strlen(field_name)))
-		{
-			field = &obj->fields[i];
-			break;
-		}
-	}
+	field = find_static_field(obj, field_name);
 
 	if (!field)
 	{
@@ -323,14 +317,7 @@ void store_to_static_field_wide(simple_dalvik_vm *vm, int val_id, char *class_na
 		return;
 	}
 
-	for (i = 0; i < obj->field_size; i++)
-	{
-		if (!strncmp(field_name, obj->fields[i].name, strlen(field_name)))
-		{
-			field = &obj->fields[i];
-			break;
-		}
-	}
+	field = find_static_field(obj, field_name);
 
 	if (!field)
 	{
@@ -405,13 +392,15 @@ void store_to_field_wide(simple_dalvik_vm *vm, int val_id, int obj_id, char *fie
 void printStaticFields(class_obj *cls)
 {
     int i = 0;
-    if (is_verbose()) {
-		printf("Class %x of %s, with fields:\n", cls, cls->name);
-		for (i = 0; i < cls->field_size; i++)
-		{
-			printf(".%s:%s: 0x%x\n", cls->fields[i].name, cls->fields[i].type, cls->fields[i].data);
-		}
-    }
+	if (is_verbose()) {
+		do {
+			printf("Class %x of %s, with fields:\n", cls, cls->name);
+			for (i = 0; i < cls->field_size; i++)
+			{
+				printf(".%s:%s: 0x%x\n", cls->fields[i].name, cls->fields[i].type, cls->fields[i].data);
+			}
+		} while(cls = cls->parent);
+	}
 }
 
 void printInsFields(instance_obj *obj)

@@ -69,8 +69,7 @@ int java_io_bufferedreader_readline(DexFileFormat *dex, simple_dalvik_vm *vm, ch
 	// remove the newline character
 	strtok(s->buf, "\n");
 
-	store_to_reg(vm, 0, (u1 *)&s);
-	move_reg_to_bottom_half_result(vm, 0);
+	store_to_bottom_half_result(vm, (unsigned char *) &s);
 
     return 0;
 }
@@ -111,8 +110,7 @@ int java_lang_long_valueof(DexFileFormat *dex, simple_dalvik_vm *vm, char *type)
 	l = malloc(sizeof(Long));
 	l->val = atoll(s->buf);
 
-	store_to_reg(vm, 0, (u1 *)&l);
-	move_reg_to_bottom_half_result(vm, 0);
+	store_to_bottom_half_result(vm, (unsigned char *) &l);
 
     return 0;
 }
@@ -126,10 +124,7 @@ int java_lang_long_longvalue(DexFileFormat *dex, simple_dalvik_vm *vm, char *typ
 
     load_reg_to(vm, p->reg_idx[0], (unsigned char *) &l);
 
-	store_double_to_reg(vm, 0, (u1 *)&l->val + 4);
-	store_double_to_reg(vm, 1, (u1 *)&l->val);
-	move_reg_to_bottom_half_result(vm, 0);
-	move_reg_to_top_half_result(vm, 1);
+	store_double_to_result(vm, (unsigned char *) &l->val);
 
     return 0;
 }
