@@ -427,6 +427,29 @@ static int op_const_class(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int
     return 0;
 }
 
+/*
+class_def_item *find_class_def_by_name(DexFileFormat *dex, char *class_name)
+{
+	int i;
+	class_def_item *found = NULL;
+	char *name;
+
+	for (i = 0; i < dex->header.classDefsSize; i++)
+	{
+		class_def_item *item = &dex->class_def_item[i];
+
+		name = get_type_item_name(dex, item->class_idx);
+		if (!strcmp(name, class_name))
+		{
+			found = item;
+			break;
+		}
+	}
+
+	return found;
+}
+*/
+
 class_def_item *find_class_def(DexFileFormat *dex, int type_id)
 {
 	int i;
@@ -445,6 +468,30 @@ class_def_item *find_class_def(DexFileFormat *dex, int type_id)
 
 	return found;
 }
+
+/*
+class_data_item *find_class_data_by_name(DexFileFormat *dex, char *class_name)
+{
+	int i;
+	class_data_item *found = NULL;
+	char *name;
+
+	for (i = 0; i < dex->header.classDefsSize; i++)
+	{
+		class_data_item *class_data = &dex->class_data_item[i];
+		class_def_item *item = &dex->class_def_item[i];
+
+		name = get_type_item_name(dex, item->class_idx);
+		if (!strcmp(name, class_name))
+		{
+			found = class_data;
+			break;
+		}
+	}
+
+	return found;
+}
+*/
 
 class_data_item *find_class_data(DexFileFormat *dex, int type_id)
 {

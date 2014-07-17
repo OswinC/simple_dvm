@@ -171,6 +171,108 @@ int java_lang_string_builder_to_string(DexFileFormat *dex, simple_dalvik_vm *vm,
     return 0;
 }
 
+array_obj *array_create_multi_dimension(DexFileFormat *dex, simple_dalvik_vm *vm, array_obj *dim, int dimension)
+{
+	array_obj *arr_obj;
+	int size = (int)dim->ptr[dimension];
+	int i;
+
+	arr_obj = (array_obj *)malloc(sizeof(array_obj) + size - 1);
+	if (!arr_obj)
+	{
+		printf("[%s] malloc fail\n", __FUNCTION__);
+		return NULL;
+	}
+
+	arr_obj->size = size;
+
+	if (dimension < dim->size - 1)
+	{
+		for (i = 0; i < size; i++)
+			arr_obj->ptr[i] = array_create_multi_dimension(dex, vm, dim, dimension + 1);
+	}
+
+	return arr_obj;
+}
+
+void gen_array_class_name(char *buf, int size, char *base_name, int dimension)
+{
+	int i;
+
+	memset(buf, 0, size);
+	for (i = 0; i < dimension; i++)
+		strcat(buf, "[");
+
+	strcat(buf, base_name);
+}
+
+class_obj *find_class_obj(simple_dalvik_vm *vm, char *name);
+int java_lang_reflect_array_new_instance(DexFileFormat *dex, simple_dalvik_vm *vm, char *type)
+{
+    invoke_parameters *p = &vm->p;
+    int idx_vx;
+    int idx_vy;
+    class_obj *cls_obj;
+    instance_obj *dim_arr_ins_obj;
+    array_obj *dim_arr_obj;
+    array_obj *result_arr;
+    class_obj *result_cls_obj;
+    instance_obj *result_ins_obj;
+    char class_name[32];
+    int i;
+
+    if (is_verbose())
+        printf("call java.lang.reflect.Array.newInstance\n");
+
+    idx_vx = p->reg_idx[0];
+    idx_vy = p->reg_idx[1];
+
+    load_reg_to(vm, idx_vx, (unsigned char *) &cls_obj);
+    load_reg_to(vm, idx_vy, (unsigned char *) &dim_arr_ins_obj);
+    dim_arr_obj = (array_obj *)dim_arr_ins_obj->priv_data;
+
+    result_arr = array_create_multi_dimension(dex, vm, dim_arr_obj, 0);
+    if (!result_arr)
+	    return -1;
+
+    gen_array_class_name(class_name, sizeof(class_name), cls_obj->name, dim_arr_obj->size);
+    if (is_verbose())
+	    printf("Array class name: %s\n", class_name);
+
+    result_cls_obj = find_class_obj(vm, class_name);
+    if (!result_cls_obj)
+    {
+        result_cls_obj = (class_obj *)malloc(sizeof(class_obj));
+        if (!result_cls_obj)
+        {
+            printf("[%s] class obj malloc fail\n", __FUNCTION__);
+            return -1;
+        }
+
+        memset(result_cls_obj, 0, sizeof(class_obj));
+        strncpy(result_cls_obj->name, class_name, strlen(class_name));
+        list_init(&result_cls_obj->class_list);
+        hash_add(&vm->root_set, &result_cls_obj->class_list, hash(result_cls_obj->name));
+    }
+
+    result_ins_obj = (instance_obj *)malloc(sizeof(instance_obj));
+    if (!result_ins_obj)
+    {
+        printf("[%s] instance obj malloc fail\n", __FUNCTION__);
+
+        return -1;
+    }
+
+    result_ins_obj->cls = result_cls_obj;
+    result_ins_obj->priv_data = (void *)result_arr;
+
+    store_to_bottom_half_result(vm, (unsigned char *)&result_ins_obj);
+    if (is_verbose())
+	    printf("Array class pointer: %p\n", result_ins_obj);
+
+    return 0;
+}
+
 static java_lang_method method_table[] = {
     {"Ljava/lang/Math;",          "random",   java_lang_math_random},
     {"Ljava/io/PrintStream;",     "println",  java_io_print_stream_println},
@@ -181,7 +283,8 @@ static java_lang_method method_table[] = {
     {"Ljava/lang/Long;", "longValue",   java_lang_long_longvalue},
     {"Ljava/lang/StringBuilder;", "<init>",   java_lang_string_builder_init},
     {"Ljava/lang/StringBuilder;", "append",   java_lang_string_builder_append},
-    {"Ljava/lang/StringBuilder;", "toString", java_lang_string_builder_to_string}
+    {"Ljava/lang/StringBuilder;", "toString", java_lang_string_builder_to_string},
+    {"Ljava/lang/reflect/Array;", "newInstance", java_lang_reflect_array_new_instance},
 };
 
 static int java_lang_method_size = sizeof(method_table) / sizeof(java_lang_method);
