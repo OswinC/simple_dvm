@@ -4,7 +4,9 @@
  * Copyright (C) 2013 Chun-Yu Wang <wicanr2@gmail.com>
  */
 
+#define _POSIX_C_SOURCE 199309L
 #include "java_lib.h"
+#include <time.h>
 
 typedef struct _String {
 	int buf_size;
@@ -271,6 +273,19 @@ int java_lang_reflect_array_new_instance(DexFileFormat *dex, simple_dalvik_vm *v
     return 0;
 }
 
+int java_lang_system_currenttimemillis(DexFileFormat *dex, simple_dalvik_vm *vm, char *type)
+{
+	long long millis; 
+	struct timespec tp;
+
+	clock_gettime(CLOCK_REALTIME, &tp);
+	millis = tp.tv_sec * 1000 + tp.tv_nsec / 1000000;
+
+	store_double_to_result(vm, (unsigned char *) &millis);
+
+    return 0;
+}
+
 static java_lang_method method_table[] = {
     {"Ljava/lang/Math;",          "random",   java_lang_math_random},
     {"Ljava/io/PrintStream;",     "println",  java_io_print_stream_println},
@@ -283,6 +298,7 @@ static java_lang_method method_table[] = {
     {"Ljava/lang/StringBuilder;", "append",   java_lang_string_builder_append},
     {"Ljava/lang/StringBuilder;", "toString", java_lang_string_builder_to_string},
     {"Ljava/lang/reflect/Array;", "newInstance", java_lang_reflect_array_new_instance},
+    {"Ljava/lang/System;", "currentTimeMillis", java_lang_system_currenttimemillis},
 };
 
 static int java_lang_method_size = sizeof(method_table) / sizeof(java_lang_method);
