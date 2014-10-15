@@ -2883,6 +2883,37 @@ static int op_div_int(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc
 
 }
 
+/* 0x81 int-to-long vx, vy
+ * Converts the int value in vy into a long value in vx,vx+1.
+ * 8140  - int-to-long v0, v4
+ * Converts the int value in v4 into a long value in v0,v1.
+ */
+static int op_int_to_long(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int reg_idx_vy = 0;
+    int reg_idx_vz = 0;
+	long long l = 0;
+    unsigned char *ptr_l = (unsigned char *) &l;
+    int i = 0;
+    reg_idx_vx = ptr[*pc + 1] & 0x0F;
+    reg_idx_vz = reg_idx_vx + 1;
+    reg_idx_vy = (ptr[*pc + 1] >> 4) & 0x0F;
+
+    load_reg_to(vm, reg_idx_vy, (unsigned char *) &i);
+
+    l = (long long)i;
+    if (is_verbose()) {
+        printf("int-to-long v%d, v%d\n", reg_idx_vx, reg_idx_vy);
+        printf("(%d) to (%ld) \n", i , l);
+    }
+
+    store_double_to_reg(vm, reg_idx_vx , ptr_l + 4);
+    store_double_to_reg(vm, reg_idx_vz , ptr_l);
+    *pc = *pc + 2;
+    return 0;
+}
+
 /* 0x83 int-to-double vx, vy
  * Converts the int value in vy into an double value in vx,vx+1.
  * 8340  - int-to-double v0, v4
@@ -3277,6 +3308,7 @@ static byteCode byteCodes[] = {
     { "invoke-virtual"    , 0x6e, 6,  op_invoke_virtual },
     { "invoke-direct"     , 0x70, 6,  op_invoke_direct },
     { "invoke-static"     , 0x71, 6,  op_invoke_static },
+    { "int-to-long"       , 0x81, 2,  op_int_to_long},
     { "int-to-double"     , 0x83, 2,  op_int_to_double},
     { "double-to-int"     , 0x8a, 2,  op_double_to_int},
     { "add-int"           , 0x90, 4,  op_add_int },
