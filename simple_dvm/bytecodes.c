@@ -2896,7 +2896,6 @@ static int op_int_to_double(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, i
     double d = 0;
     unsigned char *ptr_d = (unsigned char *) &d;
     int i = 0;
-    int i2 = 0 ;
     reg_idx_vx = ptr[*pc + 1] & 0x0F;
     reg_idx_vz = reg_idx_vx + 1;
     reg_idx_vy = (ptr[*pc + 1] >> 4) & 0x0F;
@@ -2928,7 +2927,6 @@ static int op_double_to_int(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, i
     double d = 0;
     unsigned char *ptr_d = (unsigned char *) &d;
     int i = 0;
-    int i2 = 0 ;
     reg_idx_vx = ptr[*pc + 1] & 0x0F;
     reg_idx_vy = (ptr[*pc + 1] >> 4) & 0x0F;
     reg_idx_vz = reg_idx_vy + 1;
