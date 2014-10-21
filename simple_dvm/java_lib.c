@@ -122,7 +122,7 @@ int java_lang_long_longvalue(DexFileFormat *dex, simple_dalvik_vm *vm, char *typ
     invoke_parameters *p = &vm->p;
 	Long *l;
     if (is_verbose())
-        printf("call java.lang.Long.valueOf\n");
+        printf("call java.lang.Long.longValue\n");
 
     load_reg_to(vm, p->reg_idx[0], (unsigned char *) &l);
 
