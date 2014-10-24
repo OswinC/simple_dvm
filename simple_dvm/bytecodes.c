@@ -1211,6 +1211,39 @@ static int op_packed_switch(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, i
     return 0;
 }
 
+/* 0x31, cmp-long vAA, vBB, vCC
+ *
+ * Perform long comparison, setting vAA to 0 if vBB == vCC, 1 if vBB > vCC, or -1 if vBB < vCC
+ *
+ * 3101 0203 - cmp-long v1, v2, v3
+ * Setting v1 to 0 if v2 == v3, 1 if v2 > v3, or -1 if v2 < v3
+ */
+static int op_cmp_long(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int reg_idx_vy = 0;
+    int reg_idx_vz = 0;
+	int value;
+
+    reg_idx_vx = ptr[*pc + 1];
+    reg_idx_vy = ptr[*pc + 2];
+    reg_idx_vz = ptr[*pc + 3];
+
+    if (is_verbose())
+        printf("cmp-long v%d, v%d, v%d\n", reg_idx_vx, reg_idx_vy, reg_idx_vz);
+
+	if (cmp_reg(vm, reg_idx_vy, reg_idx_vz, EQ) == 0)
+		value = 0;
+	else if (cmp_reg(vm, reg_idx_vy, reg_idx_vz, GT) == 0)
+		value = 1;
+	else if (cmp_reg(vm, reg_idx_vy, reg_idx_vz, LT) == 0)
+		value = -1;
+    store_to_reg(vm, reg_idx_vx, (unsigned char *) &value);
+
+	*pc = *pc + 4;
+    return 0;
+}
+
 /* 0x32, if-eq vA, vB, +CCCC
  *
  * Branch to the given destination if the given two registers' values compare as equal
@@ -3251,6 +3284,7 @@ static byteCode byteCodes[] = {
     { "goto/16"			  , 0x29, 2,  op_goto_16 },
     { "goto/32"			  , 0x2a, 2,  op_goto_32 },
     { "packed-switch"	  , 0x2b, 3,  op_packed_switch },
+    { "cmp-long"          , 0x31, 4,  op_cmp_long },
     { "if-eq"			  , 0x32, 4,  op_if_eq },
     { "if-ne"			  , 0x33, 4,  op_if_ne },
     { "if-lt"			  , 0x34, 4,  op_if_lt },
