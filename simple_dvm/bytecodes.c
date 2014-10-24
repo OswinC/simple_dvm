@@ -797,7 +797,7 @@ instance_obj *new_instance_java_lang_library(simple_dalvik_vm *vm, DexFileFormat
 	char *name = get_type_item_name(dex, type_id);
 
 	cls_obj = find_class_obj(vm, name);
-        if (!cls_obj)
+	if (!cls_obj)
 	{
 		cls_obj = (class_obj *)malloc(sizeof(class_obj));
 		if (!cls_obj)
@@ -1060,13 +1060,13 @@ static int op_new_instance(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, in
         printf("\n");
     }
 
-    if (!strncmp("Ljava", get_type_item_name(dex, type_id), strlen("Ljava")))
-    {
-        ins_obj = new_instance_java_lang_library(vm, dex, type_id);
-	if (!ins_obj)
-            return -1;
-	goto out;
-    }
+	if (!strncmp("Ljava", get_type_item_name(dex, type_id), strlen("Ljava")))
+	{
+		ins_obj = new_instance_java_lang_library(vm, dex, type_id);
+		if (!ins_obj)
+			return -1;
+		goto out;
+	}
 
 //    store_to_reg(vm, reg_idx_vx, (unsigned char*)&type_id);
     /* TODO */
@@ -1667,44 +1667,44 @@ static int op_utils_invoke(char *name, DexFileFormat *dex, simple_dalvik_vm *vm,
             break;
         }
 
-        if (m != 0 && type_class != 0 && p->reg_count <= 5) {
-            if (proto_item != 0)
-                proto_type_list = get_proto_type_list(dex, m->proto_idx);
-            if (proto_type_list != 0 && proto_type_list->size > 0) {
-                if (is_verbose())
-                    printf(" %s,%s,(%s)%s \n",
-                           get_string_data(dex, type_class->descriptor_idx),
-                           get_string_data(dex, m->name_idx),
-                           get_type_item_name(dex,
-                                              proto_type_list->type_item[0].type_idx),
-                           get_type_item_name(dex,
-                                              proto_item->return_type_idx));
-                if (invoke_java_lang_library(dex, vm,
-                                         get_string_data(dex, type_class->descriptor_idx),
-                                         get_string_data(dex, m->name_idx),
-                                         get_type_item_name(dex, proto_type_list->type_item[0].type_idx)))
-			goto out;
-		if (invoke_method(name, dex, vm, m, p))
-			goto out;
-            } else {
-                if (is_verbose())
-                    printf(" %s,%s,()%s \n",
-                           get_string_data(dex, type_class->descriptor_idx),
-                           get_string_data(dex, m->name_idx),
-                           get_type_item_name(dex,
-                                              proto_item->return_type_idx));
-                if (invoke_java_lang_library(dex, vm,
-                                         get_string_data(dex, type_class->descriptor_idx),
-                                         get_string_data(dex, m->name_idx), 0))
-			goto out;
-		if (invoke_method(name, dex, vm, m, p))
-			goto out;
-            }
+		if (m != 0 && type_class != 0 && p->reg_count <= 5) {
+			if (proto_item != 0)
+				proto_type_list = get_proto_type_list(dex, m->proto_idx);
+			if (proto_type_list != 0 && proto_type_list->size > 0) {
+				if (is_verbose())
+					printf(" %s,%s,(%s)%s \n",
+							get_string_data(dex, type_class->descriptor_idx),
+							get_string_data(dex, m->name_idx),
+							get_type_item_name(dex,
+								proto_type_list->type_item[0].type_idx),
+							get_type_item_name(dex,
+								proto_item->return_type_idx));
+				if (invoke_java_lang_library(dex, vm,
+							get_string_data(dex, type_class->descriptor_idx),
+							get_string_data(dex, m->name_idx),
+							get_type_item_name(dex, proto_type_list->type_item[0].type_idx)))
+					goto out;
+				if (invoke_method(name, dex, vm, m, p))
+					goto out;
+			} else {
+				if (is_verbose())
+					printf(" %s,%s,()%s \n",
+							get_string_data(dex, type_class->descriptor_idx),
+							get_string_data(dex, m->name_idx),
+							get_type_item_name(dex,
+								proto_item->return_type_idx));
+				if (invoke_java_lang_library(dex, vm,
+							get_string_data(dex, type_class->descriptor_idx),
+							get_string_data(dex, m->name_idx), 0))
+					goto out;
+				if (invoke_method(name, dex, vm, m, p))
+					goto out;
+			}
 
-        } else {
-            if (is_verbose())
-                printf("\n");
-        }
+		} else {
+			if (is_verbose())
+				printf("\n");
+		}
     }
 
 out:
