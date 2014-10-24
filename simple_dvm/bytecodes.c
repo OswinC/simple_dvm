@@ -2972,6 +2972,32 @@ static int op_int_to_double(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, i
     return 0;
 }
 
+/* 0x8e int-to-char vx, vy
+ * Converts the int value in vy into a char value in vx.
+ * 8e40  - int-to-char v0, v4
+ * Converts the int value in v4 into a char value in v0.
+ */
+static int op_int_to_char(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int reg_idx_vy = 0;
+	char c = 0;
+    int i = 0;
+
+    if (is_verbose()) {
+        printf("int-to-char v%d, v%d\n", reg_idx_vx, reg_idx_vy);
+        printf("(%d) to (%d) \n", i , c);
+    }
+
+    reg_idx_vx = ptr[*pc + 1] & 0x0F;
+    reg_idx_vy = (ptr[*pc + 1] >> 4) & 0x0F; 
+    load_reg_to(vm, reg_idx_vy, (unsigned char *) &i); 
+    c = (char)i; 
+    store_to_reg(vm, reg_idx_vx, (unsigned char *) &c);
+    *pc = *pc + 2;
+    return 0;
+}
+
 /* 0x8A double-to-int vx, vy
  * Converts the double value in vy,vy+1 into an integer value in vx.
  * 8A40  - double-to-int v0, v4
@@ -3360,6 +3386,7 @@ static byteCode byteCodes[] = {
     { "invoke-static"     , 0x71, 6,  op_invoke_static },
     { "int-to-long"       , 0x81, 2,  op_int_to_long},
     { "int-to-double"     , 0x83, 2,  op_int_to_double},
+    { "int-to-char"       , 0x8e, 2,  op_int_to_char},
     { "double-to-int"     , 0x8a, 2,  op_double_to_int},
     { "add-int"           , 0x90, 4,  op_add_int },
     { "sub-int"           , 0x91, 4,  op_sub_int },
