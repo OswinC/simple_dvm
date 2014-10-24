@@ -51,6 +51,7 @@ int java_io_bufferedreader_init(DexFileFormat *dex, simple_dalvik_vm *vm, char *
 {
     if (is_verbose())
         printf("call java.io.BufferedReader.<init>\n");
+	memset(read_buf, 0, sizeof(read_buf));
     return 0;
 }
 
