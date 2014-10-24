@@ -355,13 +355,20 @@ static int op_const_string(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, in
 {
     int reg_idx_vx = 0;
     int string_id = 0;
+	char *c_str = NULL;
+	String *s = NULL;
+
     reg_idx_vx = ptr[*pc + 1];
     string_id = ((ptr[*pc + 3] << 8) | ptr[*pc + 2]);
 
     if (is_verbose())
         printf("const-string v%d, string_id 0x%04x\n",
                reg_idx_vx , string_id);
-    store_to_reg(vm, reg_idx_vx, (unsigned char *) &string_id);
+
+	c_str = get_string_data(dex, string_id);
+	s = java_lang_string_const_string(dex, vm, c_str, strlen(c_str));
+
+    store_to_reg(vm, reg_idx_vx, (unsigned char *) &s);
     *pc = *pc + 4;
     return 0;
 }

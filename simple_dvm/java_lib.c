@@ -8,15 +8,6 @@
 #include "java_lib.h"
 #include <time.h>
 
-typedef struct _String {
-	int buf_size;
-    char *buf;
-} String;
-
-typedef struct _Long {
-	long long val;
-} Long;
-
 int java_lang_math_random(DexFileFormat *dex, simple_dalvik_vm *vm, char *type)
 {
     double r = 0.0f;
@@ -77,27 +68,24 @@ int java_io_bufferedreader_readline(DexFileFormat *dex, simple_dalvik_vm *vm, ch
     return 0;
 }
 
-/* java.io.PrintStream.println */
-static char buf[1024];
-static int buf_ptr = 0;
-static int use_buf = 0;
 int java_io_print_stream_println(DexFileFormat *dex, simple_dalvik_vm *vm, char *type)
 {
     invoke_parameters *p = &vm->p;
-    int i = 0;
-    int string_id = 0;
+    String *s;
+
     if (is_verbose())
         printf("call java.io.PrintStream.println\n");
 
-    load_reg_to(vm, p->reg_idx[1], (unsigned char *) &string_id);
-    if (use_buf == 1) {
-        printf("%s\n", buf);
-        use_buf = 0;
-        memset(buf, 0, 1024);
-        buf_ptr = 0;
-    } else {
-        printf("%s\n", get_string_data(dex, string_id));
-    }
+	if (type != 0) {
+		if (strcmp(type, "Ljava/lang/String;") == 0) {
+			load_reg_to(vm, p->reg_idx[1], (unsigned char *) &s);
+			printf("%s\n", s->buf);
+		}
+	}
+	else {
+		printf("\n");
+	}
+
     return 0;
 }
 
@@ -132,40 +120,137 @@ int java_lang_long_longvalue(DexFileFormat *dex, simple_dalvik_vm *vm, char *typ
     return 0;
 }
 
+String* java_lang_string_const_string(DexFileFormat *dex, simple_dalvik_vm *vm, char *c_str, int len)
+{
+	String *s = malloc(sizeof(String) + len + 1);
+
+	if (!s)
+		return -1;
+
+	s->buf_size = len + 1;
+	s->buf = (char *) s + sizeof(String);
+	strncpy(s->buf, c_str, len);
+	s->buf[len] = '\0';
+
+    return s;
+}
+
+int java_lang_string_charat(DexFileFormat *dex, simple_dalvik_vm *vm, char *type)
+{
+    invoke_parameters *p = &vm->p;
+	String *this;
+	int idx;
+	char c;
+    if (is_verbose())
+        printf("call java.lang.String.charAt\n");
+
+    load_reg_to(vm, p->reg_idx[0], (unsigned char *) &this);
+    load_reg_to(vm, p->reg_idx[1], (unsigned char *) &idx);
+	if (idx < this->buf_size)
+		c = this->buf[idx];
+	// else exception
+	store_to_bottom_half_result(vm, (unsigned char *) &c);
+
+    return 0;
+}
+
+int java_lang_string_compareto(DexFileFormat *dex, simple_dalvik_vm *vm, char *type)
+{
+    invoke_parameters *p = &vm->p;
+	String *this, *cmpd;
+	int i;
+	int ret = 0;
+
+    if (is_verbose())
+        printf("call java.lang.String.charAt\n");
+
+    load_reg_to(vm, p->reg_idx[0], (unsigned char *) &this);
+    load_reg_to(vm, p->reg_idx[1], (unsigned char *) &cmpd);
+
+	if (this->buf_size != cmpd->buf_size) {
+		ret = this->buf_size - cmpd->buf_size;
+	}
+	else { 
+		for (i = 0; i < this->buf_size - 1; i++)
+		{
+			if (this->buf[i] != cmpd->buf[i])
+			{
+				ret = this->buf[i] - cmpd->buf[i];
+				break;
+			}
+		}
+	}
+
+	store_to_bottom_half_result(vm, (unsigned char *) &ret);
+
+    return 0;
+}
+
 /* java.lang.StringBuilder.<init> */
 int java_lang_string_builder_init(DexFileFormat *dex, simple_dalvik_vm *vm, char *type)
 {
     invoke_parameters *p = &vm->p;
+	instance_obj *ins_obj;
     if (is_verbose())
         printf("call java.lang.StringBuilder.<init>\n");
-    memset(buf, 0, 1024);
-    buf_ptr = 0;
+
+    load_reg_to(vm, p->reg_idx[0], (unsigned char *) &ins_obj);
+	ins_obj->priv_data = (void *) malloc(sizeof(StringBuilder)); 
+	if (!ins_obj->priv_data)
+		return -1;
+    memset(ins_obj->priv_data, 0, sizeof(StringBuilder));
+
     return 0;
 }
 
 int java_lang_string_builder_append(DexFileFormat *dex, simple_dalvik_vm *vm, char *type)
 {
     invoke_parameters *p = &vm->p;
-    int string_id = 0;
+	int value = 0;
+	long long long_value;
+	unsigned char *ptr_long = (unsigned char *) &long_value;
+	instance_obj *ins_obj;
+	StringBuilder *sb;
     if (is_verbose())
         printf("call java.lang.StringBuilder.append\n");
-    load_reg_to(vm, p->reg_idx[1], (unsigned char *) &string_id);
+
+    load_reg_to(vm, p->reg_idx[0], (unsigned char *) &ins_obj);
+	sb = (StringBuilder *) ins_obj->priv_data;
+
     if (type != 0) {
         if (strcmp(type, "Ljava/lang/String;") == 0) {
-            buf_ptr += snprintf(buf + buf_ptr, 1024, "%s", get_string_data(dex, string_id));
+			load_reg_to(vm, p->reg_idx[1], (unsigned char *) &value);
+            sb->buf_ptr += snprintf(sb->buf + sb->buf_ptr, 1024, "%s", get_string_data(dex, value));
         } else if (strcmp(type, "I") == 0) {
-            buf_ptr += snprintf(buf + buf_ptr, 1024, "%d", string_id);
+			load_reg_to(vm, p->reg_idx[1], (unsigned char *) &value);
+            sb->buf_ptr += snprintf(sb->buf + sb->buf_ptr, 1024, "%d", value);
+        } else if (strcmp(type, "J") == 0) {
+			load_reg_to_double(vm, p->reg_idx[1], ptr_long + 4);
+			load_reg_to_double(vm, p->reg_idx[2], ptr_long);
+            sb->buf_ptr += snprintf(sb->buf + sb->buf_ptr, 1024, "%d", long_value);
         }
+		store_to_bottom_half_result(vm, (unsigned char *) &ins_obj);
     }
+
     return 0;
 }
 
 int java_lang_string_builder_to_string(DexFileFormat *dex, simple_dalvik_vm *vm, char *type)
 {
     invoke_parameters *p = &vm->p;
+	instance_obj *ins_obj;
+	StringBuilder *sb;
+	String *s;
     if (is_verbose())
         printf("call java.lang.StringBuilder.toString\n");
-    use_buf = 1;
+
+    load_reg_to(vm, p->reg_idx[0], (unsigned char *) &ins_obj);
+	sb = (StringBuilder *) ins_obj->priv_data;
+
+	s = java_lang_string_const_string(dex, vm, sb->buf, sb->buf_ptr);
+
+	store_to_bottom_half_result(vm, (unsigned char *) &s);
+
     return 0;
 }
 
@@ -295,6 +380,8 @@ static java_lang_method method_table[] = {
     {"Ljava/io/BufferedReader;", "readLine",   java_io_bufferedreader_readline},
     {"Ljava/lang/Long;", "valueOf",   java_lang_long_valueof},
     {"Ljava/lang/Long;", "longValue",   java_lang_long_longvalue},
+    {"Ljava/lang/String;", "charAt",   java_lang_string_charat},
+    {"Ljava/lang/String;", "compareTo",   java_lang_string_compareto},
     {"Ljava/lang/StringBuilder;", "<init>",   java_lang_string_builder_init},
     {"Ljava/lang/StringBuilder;", "append",   java_lang_string_builder_append},
     {"Ljava/lang/StringBuilder;", "toString", java_lang_string_builder_to_string},
