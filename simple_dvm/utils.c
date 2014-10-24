@@ -389,6 +389,19 @@ void store_to_field_wide(simple_dalvik_vm *vm, int val_id, int obj_id, char *fie
     load_reg_to_double(vm, val_id + 1, ptr);
 }
 
+void printRegs(simple_dalvik_vm *vm)
+{
+    int i = 0;
+    if (is_verbose()) {
+        printf("pc = %08x\n", vm->pc);
+        for (i = 0; i < 16 ; i++) {
+            printf("Reg[%2d] = %4d (%04x) ",
+                   i, vm->regs[i], vm->regs[i]);
+            if ((i + 1) % 4 == 0) printf("\n");
+        }
+    }
+}
+
 void printStaticFields(class_obj *cls)
 {
     int i = 0;

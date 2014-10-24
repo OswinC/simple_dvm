@@ -31,19 +31,6 @@ static int find_const_string(DexFileFormat *dex, char *entry)
     return -1;
 }
 
-static void printRegs(simple_dalvik_vm *vm)
-{
-    int i = 0;
-    if (is_verbose()) {
-        printf("pc = %08x\n", vm->pc);
-        for (i = 0; i < 16 ; i++) {
-            printf("Reg[%2d] = %4d (%04x) ",
-                   i, vm->regs[i], vm->regs[i]);
-            if ((i + 1) % 4 == 0) printf("\n");
-        }
-    }
-}
-
 static void op_utils_move(simple_dalvik_vm *vm, int reg_idx_vx, int reg_idx_vy)
 {
 	unsigned int data;
