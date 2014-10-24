@@ -207,6 +207,7 @@ int java_lang_string_builder_append(DexFileFormat *dex, simple_dalvik_vm *vm, ch
 {
     invoke_parameters *p = &vm->p;
 	int value = 0;
+	String *s;
 	long long long_value;
 	unsigned char *ptr_long = (unsigned char *) &long_value;
 	instance_obj *ins_obj;
@@ -219,8 +220,8 @@ int java_lang_string_builder_append(DexFileFormat *dex, simple_dalvik_vm *vm, ch
 
     if (type != 0) {
         if (strcmp(type, "Ljava/lang/String;") == 0) {
-			load_reg_to(vm, p->reg_idx[1], (unsigned char *) &value);
-            sb->buf_ptr += snprintf(sb->buf + sb->buf_ptr, 1024, "%s", get_string_data(dex, value));
+			load_reg_to(vm, p->reg_idx[1], (unsigned char *) &s);
+            sb->buf_ptr += snprintf(sb->buf + sb->buf_ptr, 1024, "%s", s->buf);
         } else if (strcmp(type, "I") == 0) {
 			load_reg_to(vm, p->reg_idx[1], (unsigned char *) &value);
             sb->buf_ptr += snprintf(sb->buf + sb->buf_ptr, 1024, "%d", value);
