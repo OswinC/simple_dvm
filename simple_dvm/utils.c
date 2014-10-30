@@ -502,10 +502,6 @@ int cmp_reg_long(simple_dalvik_vm *vm, int id1, int id2, CMP_TYPE cmp_type)
 	load_reg_to_double(vm, id1 + 1, (unsigned char *) &val1);
 	load_reg_to_double(vm, id2, (unsigned char *) &val2 + 4);
 	load_reg_to_double(vm, id2 + 1, (unsigned char *) &val2);
-	/*load_reg_to(vm, id1, (unsigned char *) &val1);*/
-	/*load_reg_to(vm, id2, (unsigned char *) &val2);*/
-	printf("val1: %ld\n", val1);
-	printf("val1: %ld, val2: %ld\n", val1, val2);
 	return cmp_val(val1, val2, cmp_type);
 }
 
