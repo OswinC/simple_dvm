@@ -318,6 +318,7 @@ typedef enum _cmp_type {
 
 int cmp_reg(simple_dalvik_vm *vm, int id1, int id2, CMP_TYPE cmp_type);
 int cmp_reg_z(simple_dalvik_vm *vm, int id, CMP_TYPE cmp_type);
+int cmp_reg_long(simple_dalvik_vm *vm, int id1, int id2, CMP_TYPE cmp_type);
 
 void simple_dvm_startup(DexFileFormat *dex, simple_dalvik_vm *vm, char *entry);
 void runMethod(DexFileFormat *dex, simple_dalvik_vm *vm, encoded_method *m);

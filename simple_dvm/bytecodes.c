@@ -1223,14 +1223,14 @@ static int op_cmp_long(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *p
     reg_idx_vy = ptr[*pc + 2];
     reg_idx_vz = ptr[*pc + 3];
 
-    if (is_verbose())
-        printf("cmp-long v%d, v%d, v%d\n", reg_idx_vx, reg_idx_vy, reg_idx_vz);
+	if (is_verbose())
+		printf("cmp-long v%d, v%d, v%d\n", reg_idx_vx, reg_idx_vy, reg_idx_vz);
 
-	if (cmp_reg(vm, reg_idx_vy, reg_idx_vz, EQ) == 0)
+	if (cmp_reg_long(vm, reg_idx_vy, reg_idx_vz, EQ) == 0)
 		value = 0;
-	else if (cmp_reg(vm, reg_idx_vy, reg_idx_vz, GT) == 0)
+	else if (cmp_reg_long(vm, reg_idx_vy, reg_idx_vz, GT) == 0)
 		value = 1;
-	else if (cmp_reg(vm, reg_idx_vy, reg_idx_vz, LT) == 0)
+	else if (cmp_reg_long(vm, reg_idx_vy, reg_idx_vz, LT) == 0)
 		value = -1;
     store_to_reg(vm, reg_idx_vx, (unsigned char *) &value);
 

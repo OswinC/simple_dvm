@@ -444,7 +444,7 @@ void printVTable(class_obj *obj)
     }
 }
 
-int cmp_val(int val1, int val2, CMP_TYPE cmp_type)
+int cmp_val(long long val1, long long val2, CMP_TYPE cmp_type)
 { 
 	switch (cmp_type)
 	{
@@ -492,6 +492,21 @@ int cmp_reg_z(simple_dalvik_vm *vm, int id, CMP_TYPE cmp_type)
 	int val;
 	load_reg_to(vm, id, (unsigned char *) &val);
 	return cmp_val(val, 0, cmp_type);
+}
+
+int cmp_reg_long(simple_dalvik_vm *vm, int id1, int id2, CMP_TYPE cmp_type)
+{
+	long long val1;
+	long long val2;
+	load_reg_to_double(vm, id1, (unsigned char *) &val1 + 4);
+	load_reg_to_double(vm, id1 + 1, (unsigned char *) &val1);
+	load_reg_to_double(vm, id2, (unsigned char *) &val2 + 4);
+	load_reg_to_double(vm, id2 + 1, (unsigned char *) &val2);
+	/*load_reg_to(vm, id1, (unsigned char *) &val1);*/
+	/*load_reg_to(vm, id2, (unsigned char *) &val2);*/
+	printf("val1: %ld\n", val1);
+	printf("val1: %ld, val2: %ld\n", val1, val2);
+	return cmp_val(val1, val2, cmp_type);
 }
 
 void dump_array_wide(instance_obj *array)
