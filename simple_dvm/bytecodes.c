@@ -2899,12 +2899,42 @@ static int op_div_int(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc
 
     if (is_verbose())
         printf("add-int v%d, v%d, v%d\n", reg_idx_vx, reg_idx_vy, reg_idx_vz);
-    /* x = y + z */
+
     load_reg_to(vm, reg_idx_vy, (unsigned char *) &y);
     load_reg_to(vm, reg_idx_vz, (unsigned char *) &z);
-    x = y % z;
-    x = (y - x) / z;
+    x = y / z;
     store_to_reg(vm, reg_idx_vx, (unsigned char *) &x);
+    *pc = *pc + 4;
+    return 0;
+
+}
+
+/* 0x9e div-long vx,vy,vz
+ * Divides vy with vz and puts the result into vx.
+ * 9e03 0001 - div-long v3, v0, v1
+ * Divides v0 with v1 and puts the result into v3.
+ */
+static int op_div_long(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int reg_idx_vy = 0;
+    int reg_idx_vz = 0;
+    long long x = 0, y = 0 , z = 0;
+    reg_idx_vx = ptr[*pc + 1];
+    reg_idx_vy = ptr[*pc + 2];
+    reg_idx_vz = ptr[*pc + 3];
+
+    if (is_verbose())
+        printf("div-long v%d, v%d, v%d\n", reg_idx_vx, reg_idx_vy, reg_idx_vz);
+
+    load_reg_to_double(vm, reg_idx_vy, (unsigned char *) &y + 4);
+    load_reg_to_double(vm, reg_idx_vy + 1, (unsigned char *) &y);
+    load_reg_to_double(vm, reg_idx_vz, (unsigned char *) &z + 4);
+    load_reg_to_double(vm, reg_idx_vz + 1, (unsigned char *) &z);
+    x = y / z;
+    store_double_to_reg(vm, reg_idx_vx, (unsigned char *) &x + 4);
+    store_double_to_reg(vm, reg_idx_vx + 1, (unsigned char *) &x);
+
     *pc = *pc + 4;
     return 0;
 
@@ -3068,6 +3098,56 @@ static int op_sub_int_2addr(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, i
     load_reg_to(vm, reg_idx_vy, (unsigned char *) &y);
     x = x - y;
     store_to_reg(vm, reg_idx_vx, (unsigned char *) &x);
+
+    *pc = *pc + 2;
+    return 0;
+}
+
+/* 0xbc sub-long/2addr vx,vy
+ * Subtracts vy from vx and puts the result into vx.
+ * BC10 - sub-long/2addr v0,v1 Subtracts v1 from v0.
+ */
+static int op_sub_long_2addr(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int reg_idx_vy = 0;
+    long long x = 0, y = 0;
+    reg_idx_vx = ptr[*pc + 1] & 0x0F ;
+    reg_idx_vy = (ptr[*pc + 1] >> 4) & 0x0F ;
+    if (is_verbose())
+        printf("sub-long/2addr v%d, v%d\n", reg_idx_vx, reg_idx_vy);
+    load_reg_to_double(vm, reg_idx_vx, (unsigned char *) &x + 4);
+    load_reg_to_double(vm, reg_idx_vx + 1, (unsigned char *) &x);
+    load_reg_to_double(vm, reg_idx_vy, (unsigned char *) &y + 4);
+    load_reg_to_double(vm, reg_idx_vy + 1, (unsigned char *) &y);
+    x = x - y;
+    store_double_to_reg(vm, reg_idx_vx, (unsigned char *) &x + 4);
+    store_double_to_reg(vm, reg_idx_vx + 1, (unsigned char *) &x);
+
+    *pc = *pc + 2;
+    return 0;
+}
+
+/* 0xbd mul-long/2addr vx,vy
+ * Multiplies vx with vy and puts the result into vx.
+ * BD10 - mul-long/2addr v0,v1 Multiplies v0 with v1.
+ */
+static int op_mul_long_2addr(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int *pc)
+{
+    int reg_idx_vx = 0;
+    int reg_idx_vy = 0;
+    long long x = 0, y = 0;
+    reg_idx_vx = ptr[*pc + 1] & 0x0F ;
+    reg_idx_vy = (ptr[*pc + 1] >> 4) & 0x0F ;
+    if (is_verbose())
+        printf("mul-long/2addr v%d, v%d\n", reg_idx_vx, reg_idx_vy);
+    load_reg_to_double(vm, reg_idx_vx, (unsigned char *) &x + 4);
+    load_reg_to_double(vm, reg_idx_vx + 1, (unsigned char *) &x);
+    load_reg_to_double(vm, reg_idx_vy, (unsigned char *) &y + 4);
+    load_reg_to_double(vm, reg_idx_vy + 1, (unsigned char *) &y);
+    x = x * y;
+    store_double_to_reg(vm, reg_idx_vx, (unsigned char *) &x + 4);
+    store_double_to_reg(vm, reg_idx_vx + 1, (unsigned char *) &x);
 
     *pc = *pc + 2;
     return 0;
@@ -3242,10 +3322,9 @@ static int op_div_int_lit8(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, in
 
     if (is_verbose())
         printf("div-int/lit8 v%d, v%d, #int%d\n", reg_idx_vx, reg_idx_vy, z);
-    /* x = y + z */
+
     load_reg_to(vm, reg_idx_vy, (unsigned char *) &y);
-    x = y % z;
-    x = (y - x) / z;
+    x = y / z;
     store_to_reg(vm, reg_idx_vx, (unsigned char *) &x);
 
     *pc = *pc + 4;
@@ -3392,8 +3471,11 @@ static byteCode byteCodes[] = {
     { "sub-int"           , 0x91, 4,  op_sub_int },
     { "mul-int"           , 0x92, 4,  op_mul_int },
     { "div-int"           , 0x93, 4,  op_div_int },
+    { "div-long"          , 0x9e, 4,  op_div_long },
     { "add-int/2addr"     , 0xb0, 2,  op_add_int_2addr},
     { "sub-int/2addr"     , 0xb1, 2,  op_sub_int_2addr},
+    { "sub-long/2addr"    , 0xbc, 2,  op_sub_long_2addr},
+    { "mul-long/2addr"    , 0xbd, 2,  op_mul_long_2addr},
     { "add-double/2addr"  , 0xcb, 2,  op_add_double_2addr},
     { "mul-double/2addr"  , 0xcd, 2,  op_mul_double_2addr},
     { "add-int/lit8"      , 0xd8, 4,  op_add_int_lit8 },
