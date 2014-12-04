@@ -225,7 +225,8 @@ void load_static_field_to(simple_dalvik_vm *vm, int val_id, char *class_name, ch
 	obj = find_class_obj(vm, class_name);
 	if (!obj)
 	{
-		printf("[%s] No class obj found: %s\n", class_name);
+		if (is_verbose())
+			printf("[%s] No class obj found: %s\n", class_name);
 		return;
 	}
 
@@ -233,7 +234,8 @@ void load_static_field_to(simple_dalvik_vm *vm, int val_id, char *class_name, ch
 
 	if (!field)
 	{
-		printf("[%s]: no field found: %s\n", __FUNCTION__, field_name);
+		if (is_verbose())
+			printf("[%s]: no field found: %s\n", __FUNCTION__, field_name);
 		return;
 	}
 

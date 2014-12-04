@@ -512,6 +512,9 @@ class_obj *find_class_obj(simple_dalvik_vm *vm, char *name)
 	class_obj *obj = NULL, *found = NULL;
 	struct list_head *p, *list;
 
+    if (strncmp(name, "Ljava", strlen("Ljava")) == 0)
+	    return find_java_class_obj(vm, name);
+
 	list = hash_get(&vm->root_set, hash(name));
 	if (!list)
 		return NULL;
@@ -2282,14 +2285,8 @@ static int op_utils_sget(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int 
         printf("op_utils_sget v%d, field 0x%04x (%s.%s)\n", reg_idx_va, field_id, class_name, field_name);
     }
 
-    if (strncmp(class_name, "Ljava", strlen("Ljava")) == 0)
-	    return 0;
-
     if (is_verbose())
     {
-	    class_obj *obj;
-
-	    obj = find_class_obj(vm, class_name);
 	    printRegs(vm);
     }
 
@@ -2297,9 +2294,6 @@ static int op_utils_sget(DexFileFormat *dex, simple_dalvik_vm *vm, u1 *ptr, int 
 
     if (is_verbose())
     {
-	    class_obj *obj;
-
-	    obj = find_class_obj(vm, class_name);
 	    printRegs(vm);
     }
 

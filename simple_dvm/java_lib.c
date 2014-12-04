@@ -8,6 +8,22 @@
 #include "java_lib.h"
 #include <time.h>
 
+// Ljava/lang/Integer
+class_obj java_lang_Integer;
+obj_field java_lang_Integer_fields[] = {
+	{.name = "TYPE", .type = "Ljava/lang/Class;", .data.vdata = &java_lang_Integer, },
+};
+class_obj java_lang_Integer = {
+	.name = "Ljava/lang/Integer;",
+	.fields = java_lang_Integer_fields,
+	.field_size = sizeof(java_lang_Integer_fields)/sizeof(obj_field),
+};
+
+static java_lang_clz clz_table[] = {
+	{"Ljava/lang/Integer;", &java_lang_Integer},
+};
+static int java_lang_clz_size = sizeof(clz_table) / sizeof(java_lang_clz);
+
 int java_lang_math_random(DexFileFormat *dex, simple_dalvik_vm *vm, char *type)
 {
     double r = 0.0f;
@@ -371,6 +387,15 @@ int java_lang_system_currenttimemillis(DexFileFormat *dex, simple_dalvik_vm *vm,
 	store_double_to_result(vm, (unsigned char *) &millis);
 
     return 0;
+}
+
+class_obj *find_java_class_obj(simple_dalvik_vm *vm, char *name)
+{
+    int i = 0;
+    for (i = 0; i < java_lang_clz_size; i++)
+		if (strcmp(name, clz_table[i].clzname) == 0)
+				return clz_table[i].clzobj;
+    return NULL;
 }
 
 static java_lang_method method_table[] = {

@@ -243,6 +243,7 @@ typedef struct _obj_field {
 		unsigned char cdata;
 		unsigned short sdata;
 		unsigned long long ldata;
+		void *vdata;
 		float fdata;
 		double ddata;
 	} data;

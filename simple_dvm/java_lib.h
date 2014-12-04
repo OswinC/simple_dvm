@@ -31,8 +31,14 @@ typedef struct _java_lang_method {
     java_lang_lib method_runtime;
 } java_lang_method;
 
+typedef struct _java_lang_clz {
+    char *clzname;
+    class_obj *clzobj;
+} java_lang_clz;
+
 int invoke_java_lang_library(DexFileFormat *dex, simple_dalvik_vm *vm,
                              char *cls_name, char *method_name, char *type); 
 String* java_lang_string_const_string(DexFileFormat *dex, simple_dalvik_vm *vm, char *c_str, int len);
+class_obj *find_java_class_obj(simple_dalvik_vm *vm, char *name);
 
 #endif
