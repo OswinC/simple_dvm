@@ -1,0 +1,37 @@
+
+put following code in the tail of op_iput()
+
+
+
+
+
+
+	printf("[OSWIN] DEBUG\n"); 
+	instance_obj *obj;
+	obj_field *field; 
+    load_reg_to(vm, reg_idx_vb, (unsigned char *) &obj); 
+    for (i = 0; i < obj->field_size; i++)
+    {
+        if (!strncmp(name_str, obj->fields[i].name, strlen(name_str)))
+		{
+			field = &obj->fields[i];
+			break;
+		}
+	} 
+	field->data.ddata = 0.123;
+	unsigned char *ptr1 = (unsigned char *)&field->data.ddata;
+	printf("[OSWIN] field->data.ddata: %f\n", field->data.ddata);
+	printf("[OSWIN] *ptr1: %x\n", *(double*)ptr1);
+	printf("[OSWIN] *ptr1+4: %x\n", *(double*)(ptr1+4));
+    load_field_to_wide(vm, 14, reg_idx_vb, name_str);
+	printRegs(vm);
+	double d=0.321;
+	unsigned char *ptr2 = (unsigned char *)&d;
+	store_double_to_reg(vm, 14, ptr2 + 4);
+	store_double_to_reg(vm, 15, ptr2);
+	store_to_field_wide(vm, 14, reg_idx_vb, name_str);
+	printf("[OSWIN] field->data.ddata: %f\n", field->data.ddata);
+	printf("[OSWIN] *ptr1: %x\n", *(double*)ptr1);
+	printf("[OSWIN] *ptr1+4: %x\n", *(double*)(ptr1+4));
+
+

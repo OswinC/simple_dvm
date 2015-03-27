@@ -2,6 +2,8 @@ class PTest
 {
 	int t;
 
+	static int bbb = 10;
+
 	public PTest()
 	{
 		t = 0;
@@ -10,6 +12,11 @@ class PTest
 	public void doTest(int b)
 	{
 		System.out.println("PTEST");
+	}
+
+	static public void test2()
+	{
+		System.out.println("test2");
 	}
 }
 
@@ -50,5 +57,14 @@ class Test extends PTest
 
 		for (int i = 0; i < 4; i++)
 			System.out.println("[" + i + "]:" + c[i].getTest());
+
+		Test.bbb = 5;
+		System.out.println("Test.bbb: " + Test.bbb);
+		System.out.println("PTest.bbb: " + PTest.bbb);
+		PTest.bbb = 7;
+		System.out.println("Test.bbb: " + Test.bbb);
+		System.out.println("PTest.bbb: " + PTest.bbb);
+
+		Test.test2(); 
 	}
 }
